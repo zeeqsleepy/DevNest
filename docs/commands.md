@@ -531,17 +531,22 @@ levels not shown. Directories only by default; `--files` includes files. A listi
 
 | Command | Purpose |
 |---|---|
-| `clean [path]` | Find removable artifacts, report reclaimable space |
-| `clean list [path]` | List candidates without totals |
+| `clean [path]` | Find removable artifacts, report reclaimable space, delete nothing |
 | `clean apply [path]` | Same as `clean --apply` |
+| `clean rules` | The directory names clean would ever consider, and what each needs |
 
 Flags: `--apply`, `--pattern <name>` repeatable to restrict to specific artifact types,
 `--protect <path>` repeatable, `--force` for a run at a filesystem root or home directory,
-`--yes`.
+`--yes`. The path defaults to the current directory.
 
 Safety behaviour is described in `modules.md` and the destructive flow in `flow.md`. Summary: only
-known patterns are ever candidates, nothing outside the scan root is ever touched, every removal
-is logged with its full resolved path before it happens.
+names in the rule set are ever candidates; a generic name such as `build` counts only when a
+project file sits beside it; nothing outside the scan root, on another filesystem, or behind a
+symlink is touched; version control directories are never entered; and every candidate is checked
+again in the moment before it is removed.
+
+`clean rules` is worth running before the first `--apply`. It prints the whole surface of what the
+command can ever remove, which is a short table.
 
 ---
 
@@ -556,14 +561,24 @@ process.
 | `port check <n>` | Whether a port is in use, and by what |
 | `port free <n>` | Terminate the process holding a port |
 
-Flags: `--tcp` / `--udp`, `--all` to include ports below 1024, `--force` for forceful
-termination after the graceful attempt times out.
+Flags: `--tcp` / `--udp`, `--all` to include ports below 1024 in a listing, `--force` for forceful
+termination after the request times out, `--grace <duration>`, `--yes`.
 
 `port check` exits 0 when the port is free and 3 when it is in use, so a script can branch without
-parsing anything.
+parsing anything. Unlike the listing, it answers about ports below 1024 without `--all`.
 
-`port free` names the process and asks for confirmation before doing anything. It refuses PID 0
-and 1, and refuses processes owned by another user unless elevated.
+`port list` hides ports below 1024 by default and reports how many it hid. Sockets whose owning
+process the system will not name are listed with the owner shown as unknown, and the count of those
+is in the result: a listing that dropped them would answer "what is listening" with something
+untrue.
+
+`port free` names the process and asks for confirmation before doing anything. It refuses pid 0 and
+pid 1 unconditionally, refuses a port held by more than one process rather than guessing, and
+re-verifies the pid against the port immediately before signalling. A process owned by another user
+is refused by the operating system; DevNest never asks for elevation.
+
+**On Windows, `port free` requires `--force`.** Windows offers no way for one process to ask
+another to exit politely, so the command says so rather than presenting a kill as a request.
 
 ---
 

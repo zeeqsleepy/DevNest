@@ -70,3 +70,13 @@ func protectedReason(path string) string {
 
 	return ""
 }
+
+// deviceID has no cheap answer on Windows.
+//
+// A volume serial number is available, but only by opening a handle to the
+// file and calling GetFileInformationByHandle, which is a syscall per entry
+// during a walk. Windows also mounts a second volume inside a directory far
+// less often than Unix does. Callers are told the answer is unavailable and
+// fall back to containment, which is the check that carries the weight in any
+// case.
+func deviceID(string) (uint64, bool) { return 0, false }

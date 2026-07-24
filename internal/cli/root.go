@@ -12,6 +12,7 @@ func NewRoot() *Command {
 		Description: tagline,
 		Usage:       "devnest <command> [arguments] [flags]",
 		Commands: []*Command{
+			newCleanCommand(),
 			newDecodeCommand(),
 			newEncodeCommand(),
 			newEnvCommand(),
@@ -20,6 +21,7 @@ func NewRoot() *Command {
 			newJSONCommand(),
 			newLogCommand(),
 			newNetworkCommand(),
+			newPortCommand(),
 			newScanCommand(),
 			newSecurityCommand(),
 			newVersionCommand(),

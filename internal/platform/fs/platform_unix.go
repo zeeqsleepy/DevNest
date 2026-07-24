@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 // pathKey normalises a path for comparison. Linux and macOS filesystems are
@@ -48,4 +49,21 @@ func protectedReason(path string) string {
 	}
 
 	return ""
+}
+
+// deviceID reports which filesystem a path lives on.
+//
+// Crossing a mount point during a bulk operation is how a cleanup aimed at a
+// project directory reaches a network share or an external disk mounted inside
+// it. On Unix the device number answers that in one stat call.
+func deviceID(path string) (uint64, bool) {
+	info, err := os.Lstat(path)
+	if err != nil {
+		return 0, false
+	}
+	stat, ok := info.Sys().(*syscall.Stat_t)
+	if !ok {
+		return 0, false
+	}
+	return uint64(stat.Dev), true
 }

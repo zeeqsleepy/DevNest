@@ -94,9 +94,16 @@ The full annotated default lives in `configs/config.example.toml`, and a test lo
 run to confirm it still parses and still matches the compiled defaults. An example that has drifted
 teaches the wrong thing to exactly the people least able to notice.
 
-`[general]`, `[scan]`, `[security]`, and `[network]` have consumers today. `[clean]`, `[secret]`,
+`[general]`, `[scan]`, `[security]`, `[network]`, and `[clean]` have consumers today. `[secret]`
 and `[export]` are loaded, type-checked, and validated so that a configuration file written today
 keeps working, and so the modules that read them in later phases need no loader changes.
+
+`clean.patterns` adds directory names to the built-in rule set rather than replacing it, and a
+name added there still needs a project marker beside it before it counts, exactly like the
+built-in generic names. `clean.protect` lists paths that are never removed whatever matches.
+Neither can lift the refusal to run at a filesystem root or in a home directory: that guard
+answers only to `--force` on the command line, because a safety rule that a file can switch off
+is not a safety rule.
 
 `[security]` describes the shape of a generated password, its length, whether symbols are used,
 whether easily misread characters are dropped. It contains no secret and never will. If a feature

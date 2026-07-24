@@ -1,8 +1,8 @@
 # CLI Reference
 
 Status: partially implemented. The grammar, global flags, exit codes, and the `file`, `network`,
-`security`, `log`, `env`, `scan`, `encode`, `decode`, `json`, and `yaml` command groups below are
-live as of Phase 7
+`security`, `log`, `env`, `scan`, `encode`, `decode`, `json`, `yaml`, `port`, and `clean` command
+groups below are live as of Phase 8
 Last revised: 2026-07-24
 
 `commands.md` lists what the commands are. This document covers how the interface is put
@@ -110,6 +110,23 @@ The `json` and `yaml` groups share these:
 Every command in both groups takes one document, from a path or from `--stdin`, and never both.
 Neither group has a command that writes to the file it read: the result goes to stdout, so a
 redirect does the writing where the user can see it.
+
+The `port` group shares `--tcp` and `--udp`, which mean the same thing everywhere and where
+neither means both. `--all` appears only on `list`, because it exists to keep a listing readable
+and a direct question about one port deserves a direct answer.
+
+The `clean` group shares these:
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--pattern <name>` | every rule | Restrict to a named rule; repeatable |
+| `--protect <path>` | none | A path that is never removed; repeatable, added to the configured list |
+| `--force` | off | Allow a run in a home directory or at a filesystem root |
+| `--yes` | off | Answer the confirmation in advance |
+
+`--apply` is on the group command only; `clean apply` is the same thing spelled as a verb. Neither
+`--pattern` nor `--protect` can widen what the rule set allows, and `--force` lifts only the
+protected-root refusal, never the marker requirement or the containment check.
 
 ## Supplying a secret
 
@@ -288,10 +305,10 @@ Check-style commands use the exit code as their answer. Live as of Phase 7:
 | `env which` | The tool name resolves to nothing on PATH (exit 3, not found) |
 | `json query` | The expression selects nothing (exit 3, not found) |
 | `json`, `yaml` | The document does not parse (exit 1, with the line and column) |
+| `port check` | The port is in use (exit 3, not found) |
 
-Planned: `port check` exits 3 when the port is in use, `hash verify` exits 1 on mismatch, `secret
-scan` exits 1 when findings exist. Each such command documents this in its own help text, since
-that is where someone writing a script will look.
+Still planned: `hash verify` exits 1 on mismatch. Each such command documents its exit codes in its
+own help text, since that is where someone writing a script will look.
 
 The distinction that makes this work: a site being down is a *result*, so the command succeeds and
 the exit code carries the answer. Only a failure to ask the question, such as an unusable URL or a

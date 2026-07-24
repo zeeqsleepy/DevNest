@@ -513,3 +513,56 @@ func TestOpenClassifiesAMissingFile(t *testing.T) {
 		t.Errorf("code = %q, want %q", got, errors.CodeNotFound)
 	}
 }
+
+func TestRemoveAllDeletesATreeAndIsQuietAboutWhatIsGone(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "node_modules", "package", "dist")
+
+	if err := os.MkdirAll(nested, 0o755); err != nil {
+		t.Fatalf("build a tree: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(nested, "index.js"), []byte("1"), 0o600); err != nil {
+		t.Fatalf("write a file: %v", err)
+	}
+
+	target := filepath.Join(root, "node_modules")
+	if err := (System{}).RemoveAll(target); err != nil {
+		t.Fatalf("RemoveAll: %v", err)
+	}
+	if _, err := os.Stat(target); !os.IsNotExist(err) {
+		t.Errorf("the tree is still there: %v", err)
+	}
+
+	// Removing what is already gone is how a second run of a cleanup behaves,
+	// and it is not a failure.
+	if err := (System{}).RemoveAll(target); err != nil {
+		t.Errorf("removing a missing path reported %v", err)
+	}
+}
+
+func TestDeviceIDAgreesWithItself(t *testing.T) {
+	root := t.TempDir()
+	nested := filepath.Join(root, "child")
+	if err := os.Mkdir(nested, 0o755); err != nil {
+		t.Fatalf("create a directory: %v", err)
+	}
+
+	first, ok := (System{}).DeviceID(root)
+	second, alsoOK := (System{}).DeviceID(nested)
+
+	if ok != alsoOK {
+		t.Fatalf("availability differs between two paths on one filesystem: %v and %v", ok, alsoOK)
+	}
+	if !ok {
+		t.Skipf("this platform does not report device identity, which is expected on Windows")
+	}
+	if first != second {
+		t.Errorf("device %d and %d differ for two paths in one temporary directory", first, second)
+	}
+}
+
+func TestDeviceIDSaysNothingAboutAMissingPath(t *testing.T) {
+	if _, ok := (System{}).DeviceID(filepath.Join(t.TempDir(), "nowhere")); ok {
+		t.Error("a missing path was given a device identity")
+	}
+}

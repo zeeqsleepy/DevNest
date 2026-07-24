@@ -1,7 +1,7 @@
 # Security
 
-Status: the file-handling, network, and secret-handling sections are implemented as of Phase 4;
-the process section is still design
+Status: the file-handling, network, secret-handling, process, and removal sections are implemented
+as of Phase 8; the credential-scanning section is still design
 Last revised: 2026-07-24
 
 DevNest deletes files, terminates processes, reads credentials, and makes network requests. Each
@@ -137,14 +137,51 @@ is misleading.
 
 **Termination** is the sharpest edge in the tool:
 
-- The target process is identified by name, PID, and command line before anything happens.
+- The target process is identified by name and PID before anything happens, and shown to the user
+  as part of the question. The command line is deliberately *not* read: it can carry a credential
+  passed as an argument, and this output is printed, exported, and pasted into tickets.
 - Interactive confirmation is required unless `--yes` was passed.
-- PID 0 and PID 1 are refused unconditionally.
-- Processes owned by another user are refused without elevation, and DevNest does not attempt to
-  acquire elevation.
+- PID 0 and PID 1 are refused unconditionally, in the platform layer, where the refusal is closest
+  to the syscall. On Unix, signalling PID 0 addresses an entire process group.
+- A port held by more than one process is refused rather than acted on. Choosing between two
+  listeners is guessing with somebody's process.
 - Graceful termination first, forceful only after a timeout and only with `--force`.
 - The PID is re-verified against the port immediately before signalling. PIDs are reused, and the
   window between enumeration and action is exactly where the wrong process gets killed.
+
+**Ownership is the operating system's decision.** DevNest computes no ownership check of its own
+and never attempts to acquire elevation. The kernel refuses to signal another user's process, and
+that refusal is classified and reported as a permission error naming what to do instead. A check
+computed in DevNest would either duplicate the kernel's or, worse, disagree with it.
+
+**Windows cannot ask a process to exit.** There is no cross-process equivalent of SIGTERM: a
+console program can be sent a break event only from a process attached to the same console, and
+from anywhere else the only universal mechanism is `TerminateProcess`, which is a kill. `port free`
+on Windows therefore requires `--force` and explains why. Presenting a kill as a polite request
+would be a lie that costs somebody unsaved state.
+
+## Removal
+
+`devnest clean` is the only command that deletes data, and its guards are tested against the
+refusal rather than the success:
+
+- Dry run is the default; `--apply` is required, and it prompts unless `--yes` was passed or
+  confirmation was turned off in configuration.
+- Only names in the built-in rule set or the user's configuration are candidates. Nothing is
+  selected by size, age, or emptiness.
+- A generic name needs corroboration: `build`, `dist`, `out`, `target`, `bin`, `obj`, and
+  `coverage` count only when a project file such as `package.json` or `Cargo.toml` sits beside
+  them. A configured pattern is held to the same requirement.
+- Symbolic links are never followed and never removed. Version control directories are never
+  entered.
+- A candidate outside the scan root after resolving, or on a different filesystem, is skipped and
+  the reason is reported.
+- The protected-path table (filesystem roots, home directories, system directories) refuses the
+  run; only `--force` on the command line lifts it, never a configuration file.
+- Every candidate is re-checked against every guard immediately before it is removed. Between the
+  scan and the delete, a directory can be replaced by a symlink or moved.
+- Every skipped candidate is reported with its reason, because a guard that fires silently is
+  indistinguishable from a bug.
 
 **Subprocess execution** (currently only `git`):
 

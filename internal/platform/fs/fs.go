@@ -348,6 +348,35 @@ func (s System) ProtectedReason(path string) string {
 	return protectedReason(path)
 }
 
+// RemoveAll deletes a directory and everything inside it.
+//
+// This is the only method in the platform layer that destroys data, and it is
+// deliberately dumb: it checks nothing beyond the operation succeeding. Every
+// guard that decides whether a path may be deleted at all lives in the module
+// above, where the rules can be read in one place and tested against the
+// refusal rather than the success. A platform method that also enforced policy
+// would be a second, quieter copy of those rules.
+//
+// A path that does not exist is not an error. Two runs of a cleanup where the
+// first succeeded should not differ.
+func (s System) RemoveAll(path string) error {
+	if err := os.RemoveAll(path); err != nil {
+		return wrapPath("remove", path, err)
+	}
+	return nil
+}
+
+// DeviceID identifies the filesystem a path lives on, when the platform can
+// say.
+//
+// The second return value is false where that question has no cheap answer,
+// which is currently Windows. A caller uses this to avoid walking off the
+// filesystem it started on; where the answer is unavailable it has to fall
+// back to containment, which is the check that matters most anyway.
+func (s System) DeviceID(path string) (uint64, bool) {
+	return deviceID(path)
+}
+
 // PathIdentity normalises a path so that two spellings of the same file
 // compare equal. It is a pure function rather than a method because it
 // performs no I/O, but it still belongs here: whether case matters is a

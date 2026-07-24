@@ -1,6 +1,6 @@
 # Architecture
 
-Status: implemented through Phase 7
+Status: implemented through Phase 8
 Last revised: 2026-07-24
 
 This document describes how DevNest is put together, which layer is allowed to know about which
@@ -153,7 +153,20 @@ reported rather than discovered as an out-of-memory kill.
 and around it is still the standard library, and the module graph is pinned in CI so that a second
 dependency has to be a decision.
 
-The eight modules share nothing, and none imports another. All eight walk their own path to the
+`internal/core/port` and `internal/core/clean` are the ninth and tenth modules, added in Phase 8,
+and they are the two that can change the machine rather than describe it. `port` splits its
+dependencies by capability: `Enumerator` lists sockets, `Inspector` names processes, and
+`Terminator` is the only one that can end one, so `List` and `Check` are read-only by signature.
+`clean` does the same with `Inspector` and `Remover`. In both, the destructive function is the one
+whose parameter type has a destructive method, and no other function can reach it.
+
+Phase 8 is also where the platform layer stopped being portable by luck. Socket enumeration has
+three implementations under build tags (`syscall` against the IP Helper API on Windows, `/proc` on
+Linux, `lsof` on macOS), and process termination has three more. Two honest gaps are recorded
+rather than papered over: macOS uses `lsof` because `libproc` needs cgo, and Windows has no way to
+ask a process to exit, so `port free` there requires `--force`.
+
+The ten modules share nothing, and none imports another. All ten walk their own path to the
 platform layer, which is the property the layering exists to protect.
 
 Where two of them genuinely need the same thing, the shared code lives one layer down or in a
@@ -441,3 +454,10 @@ Directions the structure already accommodates, without committing to any of them
 | No `yaml format` command | Re-emitting YAML deletes every comment in the file | YAML can be validated and converted, never reprinted |
 | A nested value is refused rather than stringified into a CSV cell | A spreadsheet that looks converted and is not gets found weeks later, in a report | `--flatten` is a decision the user makes, not a default |
 | JWT decoding never verifies, and the result carries the field | Verification needs the key, an algorithm policy, and an audience decision; half of it teaches false trust | A user wanting verification needs a different tool |
+| Socket enumeration is three implementations behind one surface | There is no portable answer; each kernel publishes it differently | Three files to maintain, and only one of them tested on any given machine |
+| macOS shells out to `lsof` rather than calling `libproc` | `libproc` needs cgo, and static cross-compiled releases are worth more than one syscall | A subprocess, a timeout, and a dependency on a program that ships with the OS |
+| `port free` requires `--force` on Windows | Windows has no cross-process way to ask politely; the only mechanism is a kill | One command behaves differently on one platform, and says so |
+| Process ownership is left to the kernel | It is the authority; a second check would duplicate or contradict it | DevNest reports a permission error rather than predicting one |
+| `clean` requires a marker file beside a generic directory name | "build" is output in a project and somebody's work anywhere else | A project with no recognised marker file is not cleaned |
+| Every `clean` candidate is re-checked immediately before removal | The tree has had time to change since the scan | The guards run twice on every run |
+| `Scan` takes an interface with no destructive method | Calling the wrong function cannot delete anything | Two interfaces where one would compile |

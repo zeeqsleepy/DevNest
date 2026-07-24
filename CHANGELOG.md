@@ -10,6 +10,45 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: ports and cleanup
+
+- `devnest port list`: every listening socket with the process that owns it, and how reachable each
+  one is: on all interfaces, or only from this machine. Sockets whose owner the system will not
+  name are listed as unknown rather than dropped, and the count of them is reported, because a
+  listing that quietly omits what it could not attribute is not an answer. Ports below 1024 are
+  hidden unless `--all` is passed, and the number hidden is part of the result.
+- `devnest port check <port>`: whether a port is taken, and by what. Exit 0 when it is free and 3
+  when it is in use, so a script can branch without parsing anything.
+- `devnest port free <port>`: end the process holding a port. It names the process before asking,
+  asks the process to exit rather than killing it, and kills only with `--force`. A port held by
+  more than one process is refused instead of guessed at; pid 0 and pid 1 are refused
+  unconditionally; and the pid is re-verified against the port in the moment before anything is
+  signalled, because pids are reused. On Windows `--force` is required and the command says why:
+  Windows offers no way for one process to ask another to exit politely, and presenting a kill as a
+  request would be a lie.
+- `devnest clean [path]`: find the directories a build regenerates and report what they cost.
+  **Nothing is deleted without `--apply`.** A directory is a candidate only when its name is in the
+  rule set, and generic names need evidence beside them: `build` counts next to a `package.json` or
+  a `Cargo.toml`, and not in a directory of photographs that happens to have one. Size, age, and
+  emptiness are never evidence.
+- `devnest clean apply [path]`: the same, spelled as a verb. The plan is shown and confirmed first,
+  every candidate is re-checked against every guard in the moment before it is removed, and a
+  directory that cannot be removed is reported while the rest continue.
+- `devnest clean rules`: the whole surface of what clean can ever remove, with what each rule needs
+  beside it and what regenerating it costs. Worth reading before the first `--apply`.
+
+Guards on `clean`, each with a test asserting the refusal rather than the success: symbolic links
+are never followed or removed, version control directories are never entered, nothing outside the
+scan root or on another filesystem is touched, and a run at a filesystem root or in a home
+directory is refused unless `--force` is passed on the command line, which no configuration file
+can do. `vendor` is deliberately not a rule: it is checked in on purpose in plenty of repositories.
+
+Three platform packages grew to support this. Socket enumeration is three implementations behind
+one surface: the IP Helper API through `syscall` on Windows, `/proc/net` with inode-to-pid
+resolution on Linux, and `lsof` on macOS, where the alternative was cgo and DevNest builds without
+it so releases stay static. Process naming and termination are three more, and `platform/fs` gained
+`RemoveAll` and `DeviceID`.
+
 ### Added: data and encoding tools
 
 - `devnest encode hex` and `devnest decode hex`: hex in both directions. Decoding accepts either

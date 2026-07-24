@@ -11,12 +11,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 func binaryPath(t *testing.T) string {
@@ -798,6 +800,215 @@ func TestEncodingAndDataGroupHelp(t *testing.T) {
 		"decode": {"hex", "url", "jwt"},
 		"json":   {"format", "minify", "query", "to-yaml", "to-csv"},
 		"yaml":   {"to-json"},
+	}
+
+	for group, commands := range tests {
+		got := runBinary(t, group, "help")
+		if got.exitCode != 0 {
+			t.Fatalf("%s help exited %d\nstderr: %s", group, got.exitCode, got.stderr)
+		}
+		for _, name := range commands {
+			if !strings.Contains(got.stdout, name) {
+				t.Errorf("%s help does not list %q:\n%s", group, name, got.stdout)
+			}
+		}
+	}
+}
+
+// The port and clean groups are where a mistake costs a process or a
+// directory, so the end-to-end suite covers the exit codes a script branches
+// on and, for clean, the promise that a run without --apply removes nothing.
+func TestPortListRunsAndReportsRows(t *testing.T) {
+	got := runBinary(t, "port", "list", "--output", "csv")
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+
+	lines := strings.Split(strings.TrimSpace(got.stdout), "\n")
+	if strings.TrimSpace(lines[0]) != "proto,port,address,pid,process" {
+		t.Errorf("header = %q, want the column names", lines[0])
+	}
+	if strings.Contains(got.stdout, "devnest") {
+		t.Errorf("stdout carries envelope metadata:\n%s", got.stdout)
+	}
+}
+
+// A port this test is holding must be reported as in use, and a port nothing
+// is on must not be. The exit code carries the same answer as the output.
+func TestPortCheckExitCodes(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("open a listener: %v", err)
+	}
+	defer func() { _ = listener.Close() }()
+
+	_, port, err := net.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		t.Fatalf("read the listening address: %v", err)
+	}
+
+	inUse := runBinary(t, "port", "check", port)
+	if inUse.exitCode != 3 {
+		t.Errorf("a held port exited %d, want 3\nstdout: %s", inUse.exitCode, inUse.stdout)
+	}
+	if !strings.Contains(inUse.stdout, "in use") {
+		t.Errorf("stdout = %q, want it to say the port is in use", inUse.stdout)
+	}
+
+	// Port 1 is not something a test can guarantee is free, so the free case
+	// uses the port this test just released.
+	_ = listener.Close()
+	free := runBinary(t, "port", "check", port)
+	if free.exitCode != 0 {
+		t.Errorf("a free port exited %d, want 0\nstderr: %s", free.exitCode, free.stderr)
+	}
+}
+
+func TestPortRejectsBadInput(t *testing.T) {
+	for _, args := range [][]string{
+		{"port", "check"},
+		{"port", "check", "0"},
+		{"port", "check", "70000"},
+		{"port", "free", "http"},
+	} {
+		got := runBinary(t, args...)
+		if got.exitCode != 2 {
+			t.Errorf("%v exited %d, want 2\nstderr: %s", args, got.exitCode, got.stderr)
+		}
+	}
+}
+
+// port free asks before it acts, and a non-interactive run without --yes must
+// refuse rather than hang or proceed.
+func TestPortFreeRefusesToActWithoutAnAnswer(t *testing.T) {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("open a listener: %v", err)
+	}
+	defer func() { _ = listener.Close() }()
+
+	_, port, err := net.SplitHostPort(listener.Addr().String())
+	if err != nil {
+		t.Fatalf("read the listening address: %v", err)
+	}
+
+	got := runBinary(t, "port", "free", port)
+	if got.exitCode == 0 {
+		t.Fatalf("a termination went ahead without confirmation\nstdout: %s", got.stdout)
+	}
+
+	// The test process is still the one holding the port, and it is still here.
+	if _, err := net.DialTimeout("tcp", listener.Addr().String(), 2*time.Second); err != nil {
+		t.Errorf("the listener was terminated after all: %v", err)
+	}
+}
+
+// A project tree with artifacts in it, for the clean tests.
+func writeProject(t *testing.T) string {
+	t.Helper()
+
+	root := t.TempDir()
+	files := map[string]string{
+		"package.json":                 `{"name":"example"}`,
+		"src/index.js":                 "console.log(1)\n",
+		"node_modules/left-pad/pad.js": "module.exports = 1\n",
+		"dist/bundle.js":               "!function(){}()\n",
+	}
+
+	for name, content := range files {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("create a directory: %v", err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatalf("write a file: %v", err)
+		}
+	}
+	return root
+}
+
+// The default is a dry run, and the tree has to be untouched afterwards. This
+// is the single most important assertion in the suite.
+func TestCleanWithoutApplyDeletesNothing(t *testing.T) {
+	root := writeProject(t)
+
+	got := runBinary(t, "clean", root)
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if !strings.Contains(got.stdout, "Nothing has been deleted") {
+		t.Errorf("stdout = %q, want it to say the run changed nothing", got.stdout)
+	}
+
+	for _, name := range []string{"node_modules", "dist"} {
+		if _, err := os.Stat(filepath.Join(root, name)); err != nil {
+			t.Errorf("%s was removed by a run without --apply: %v", name, err)
+		}
+	}
+}
+
+func TestCleanApplyRemovesTheArtifactsAndKeepsTheSource(t *testing.T) {
+	root := writeProject(t)
+
+	got := runBinary(t, "clean", root, "--apply", "--yes")
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+
+	for _, name := range []string{"node_modules", "dist"} {
+		if _, err := os.Stat(filepath.Join(root, name)); !os.IsNotExist(err) {
+			t.Errorf("%s survived --apply: %v", name, err)
+		}
+	}
+	for _, name := range []string{"package.json", filepath.Join("src", "index.js")} {
+		if _, err := os.Stat(filepath.Join(root, name)); err != nil {
+			t.Errorf("%s was removed, and it is not build output: %v", name, err)
+		}
+	}
+}
+
+// Removal needs an answer. Without a terminal and without --yes the command
+// fails, and nothing is deleted.
+func TestCleanApplyRefusesWithoutConfirmation(t *testing.T) {
+	root := writeProject(t)
+
+	got := runBinary(t, "clean", "apply", root)
+	if got.exitCode == 0 {
+		t.Fatalf("a removal went ahead without confirmation\nstdout: %s", got.stdout)
+	}
+	if _, err := os.Stat(filepath.Join(root, "node_modules")); err != nil {
+		t.Errorf("node_modules was removed anyway: %v", err)
+	}
+}
+
+func TestCleanRefusesAPatternItDoesNotKnow(t *testing.T) {
+	root := writeProject(t)
+
+	got := runBinary(t, "clean", root, "--pattern", "node_modlues")
+	if got.exitCode != 2 {
+		t.Errorf("exit code = %d, want 2\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if !strings.Contains(got.stderr, "clean rules") {
+		t.Errorf("stderr = %q, want it to name the command that lists the rules", got.stderr)
+	}
+}
+
+func TestCleanRulesListsTheWholeSurface(t *testing.T) {
+	got := runBinary(t, "clean", "rules")
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	for _, want := range []string{"node_modules", "__pycache__", "target"} {
+		if !strings.Contains(got.stdout, want) {
+			t.Errorf("stdout does not list %q:\n%s", want, got.stdout)
+		}
+	}
+}
+
+func TestPortAndCleanGroupHelp(t *testing.T) {
+	tests := map[string][]string{
+		"port":  {"list", "check", "free"},
+		"clean": {"apply", "rules"},
 	}
 
 	for group, commands := range tests {

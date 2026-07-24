@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: phases 0 through 7 complete
+Status: phases 0 through 8 complete
 Last revised: 2026-07-24
 
 Where the project is going and roughly in what order. Phases are ordered by dependency, not by
@@ -208,16 +208,44 @@ Hand-writing a YAML parser is not a reasonable use of anyone's time, and `module
 since Phase 0. CI now pins the whole module graph to an allow list, so a second dependency is a
 decision rather than an accident.
 
-## Phase 8: System modules
+## Phase 8: System modules *(complete)*
 
-Where the cross-platform work gets real.
+Where the cross-platform work got real, and where the first command that deletes data landed.
 
-- `core/port`: three separate socket enumeration implementations behind one surface.
-- `core/clean`: removal, which is a step beyond anything the file module does.
+- `platform/net`: socket enumeration, in three implementations behind one surface. Windows calls
+  the IP Helper API through `syscall`, Linux parses `/proc/net` and resolves socket inodes through
+  `/proc/<pid>/fd`, macOS runs `lsof`.
+- `platform/proc`: naming a process, asking it to exit, and killing it. Three more build-tagged
+  files, and one honest gap: Windows has no way for one process to ask another to exit politely.
+- `platform/fs`: gained `RemoveAll` and `DeviceID`.
+- `core/port`: list, check, free.
+- `core/clean`: scan, apply, and the rule table.
+- `internal/cli`: the `port` and `clean` groups.
 
-`clean` ships only once every guard in `security.md` has a test asserting the refusal, not just
-the success path. The protected-path table and the enumerate-then-act pattern already exist in
-`platform/fs` and `core/file`, so it inherits most of its safety rather than reinventing it.
+**Done:** eight commands with tests at three levels. `internal/core` is at 91%. The clean tests
+are mostly refusals rather than successes, which is the shape the phase called for: every guard
+has a test asserting nothing was removed.
+
+Decisions worth carrying forward, recorded in `modules.md`, `security.md`, and `architecture.md`:
+
+- **macOS shells out to `lsof` rather than calling `libproc`**, because `libproc` needs cgo and
+  DevNest builds with it off so releases stay static and cross-compilable. The plan said `libproc`;
+  the trade was not worth it for one command on one platform.
+- **Windows cannot ask a process to exit**, so `port free` there requires `--force` and says why,
+  rather than dressing a kill up as a polite request. The distinction matters when the process is
+  a database.
+- **Process ownership is the operating system's decision, not DevNest's.** No ownership check is
+  computed here; the kernel refuses and the refusal is reported. A second opinion would either
+  duplicate that check or contradict it.
+- **A port held by more than one process is refused**, never guessed at, and the pid is
+  re-verified against the port immediately before signalling.
+- **`clean` needs evidence, not a name.** A generic directory name counts only when a project
+  marker sits beside it, so `build` is build output next to a `package.json` and somebody's work
+  everywhere else. Size, age, and emptiness are never evidence.
+- **Every candidate is re-checked in the moment before removal**, because the tree between a scan
+  and a delete has had time to change.
+- **`vendor` is deliberately not a rule.** It is checked in on purpose in plenty of repositories,
+  and deleting it breaks an offline build.
 
 ## Phase 9: Repository and secret scanning
 

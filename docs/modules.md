@@ -1,7 +1,8 @@
 # Modules
 
 Status: `core/file`, `core/network`, `core/security`, `core/log`, `core/env`, `core/scan`,
-`core/encoding`, and `core/data` implemented; the rest planned
+`core/encoding`, `core/data`, `core/port`, and `core/clean` implemented; `core/git`, `core/secret`,
+and `core/doctor` planned
 Last revised: 2026-07-24
 
 Every unit of real work in DevNest is a module: one package under `internal/core/`, one command
@@ -462,7 +463,7 @@ on any directory, including one that is not a repository.
 
 ---
 
-### `core/clean`: artifact removal
+### `core/clean`: artifact removal *(implemented)*
 
 **Owns.** Locating build output and dependency caches (`node_modules`, `target`, `dist`, `build`,
 `__pycache__`, `.next`, `bin`, `obj`, and others), reporting reclaimable space, and (only when
@@ -471,15 +472,33 @@ explicitly told) removing them.
 **Safety design.** This is the highest-risk module and its design reflects that:
 
 - Dry run is the default. `--apply` is required to delete anything.
-- Only patterns from the built-in rule set, plus user-configured patterns, are ever candidates. It
-  never removes anything by a heuristic guess.
-- Never crosses a filesystem boundary, never follows a symlink out of the scan root, never
-  operates on a path above the scan root after resolving `..` and symlinks.
-- Refuses to run at a filesystem root or in a user's home directory without an explicit
-  `--force` and an interactive confirmation.
-- Every removal is logged with its full resolved path before it happens.
+- Only names from the built-in rule set, plus user-configured names, are ever candidates. It never
+  removes anything by a heuristic guess: size, age, and emptiness are not evidence.
+- **A generic name needs a marker beside it.** `build`, `dist`, `out`, `coverage`, `target`, `bin`,
+  and `obj` count only when the directory containing them also holds a project file such as
+  `package.json`, `Cargo.toml`, or a `.csproj`. `node_modules` and `__pycache__` need nothing,
+  because nobody has a personal directory by those names. This is the rule that separates build
+  output from somebody's work, and a configured pattern is held to it too.
+- Never crosses a filesystem boundary, never follows a symlink, never removes one, and never
+  operates on a path outside the scan root after resolving.
+- Never enters a version control directory.
+- Refuses to run at a filesystem root or in a user's home directory without an explicit `--force`,
+  which no configuration file can supply.
+- Every candidate is re-checked against every guard in the moment before it is removed, because a
+  tree can change between being listed and being deleted.
+- A removal that fails is recorded and the rest continue; a run that stops halfway leaves a tree
+  nobody can reason about.
 
-**Depends on.** `platform/fs`, the shared classification rule set.
+**Two interfaces, split by whether they destroy.** `Scan` takes an `Inspector`, which has no method
+that deletes; `Apply` takes a `Remover`. Calling the wrong function cannot delete anything, because
+the wrong function has nothing to delete with.
+
+**Deliberately absent.** `vendor` is not a rule: it is checked in on purpose in plenty of
+repositories and deleting it breaks an offline build. Nor is anything outside the tree the user
+named, such as `~/.npm` or `~/.cargo`. A tool that reaches into a home directory to free space is
+a different and more dangerous tool.
+
+**Depends on.** `platform/fs`.
 
 **Later.** Age filters (`--older-than 30d`). Recursive multi-project mode for cleaning an entire
 workspace directory in one pass: powerful and correspondingly dangerous, so it lands behind its
@@ -487,23 +506,37 @@ own flag with its own confirmation.
 
 ---
 
-### `core/port`: network port inspection
+### `core/port`: network port inspection *(implemented)*
 
 **Owns.** Enumerating listening sockets with their owning process, checking whether a specific
 port is in use, and terminating a process holding a port when the user asks for it.
 
-**Platform reality.** This is where cross-platform uniformity costs the most. Windows uses the
-IP Helper API, Linux reads `/proc/net/*` and resolves inodes to PIDs through `/proc/*/fd`, macOS
-uses `libproc`. Three implementations, one exported surface, all under build tags in
-`platform/net` and `platform/proc`. The module itself contains no OS conditionals.
+**Platform reality.** This is where cross-platform uniformity costs the most, and it cost slightly
+more than planned. Windows calls the IP Helper API (`GetExtendedTcpTable` and its UDP twin) through
+`syscall`, with no dependency added. Linux reads `/proc/net/{tcp,tcp6,udp,udp6}` and resolves
+socket inodes to pids through `/proc/<pid>/fd`. macOS was planned as `libproc` and ships as `lsof`
+instead: `libproc` needs cgo, DevNest builds with `CGO_ENABLED=0` so releases stay static and
+cross-compilable, and giving that up for one command on one platform is the wrong trade. `lsof` has
+shipped with macOS for two decades and its `-F` field output is a stable contract.
+
+Three implementations, one exported surface, all under build tags in `platform/net` and
+`platform/proc`. The module itself contains no OS conditionals.
 
 **Privilege.** Process ownership for other users' processes may be unavailable without elevation.
-The module reports what it can see and marks the rest as unknown rather than failing the whole
-command.
+Every such socket is listed with its owner marked unknown, and the result counts them, so a listing
+is never quietly incomplete.
 
-**Termination.** `devnest port free <n>` names the process and asks for confirmation. Graceful
-signal first, forceful termination only after a timeout and only with `--force`. Refuses to
-terminate PID 0 or 1, or any process not owned by the current user without elevation.
+**Windows has no polite signal.** There is no way for one process to ask another to exit: a console
+program can be sent a break event only from the same console, and from an unrelated process the
+only universal mechanism is `TerminateProcess`, which is a kill. So on Windows `port free` requires
+`--force` and says why, rather than presenting a kill as a request.
+
+**Termination.** `devnest port free <n>` names the process, asks for confirmation, then asks the
+process to exit and waits. Killing needs `--force`. Pid 0 and pid 1 are refused unconditionally in
+the platform layer. Ownership is not checked here at all: the kernel is the authority on who may
+signal what, it refuses, and the refusal is reported. A port held by more than one process is
+refused rather than guessed at, and the pid is re-verified against the port immediately before
+anything is signalled.
 
 **Depends on.** `platform/net`, `platform/proc`.
 

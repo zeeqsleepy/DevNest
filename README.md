@@ -11,9 +11,9 @@ collection of installed utilities, and a browser tab for the things that are inc
 DevNest collects it into one executable with one consistent interface that behaves identically on
 Windows, Linux, and macOS.
 
-> **Status: Phase 7, data and encoding.** The `file`, `network`, `security`, `log`, `env`, `scan`,
-> `encode`, `decode`, `json`, and `yaml` command groups work end to end. The rest of the table below
-> is still the plan. See [docs/roadmap.md](docs/roadmap.md).
+> **Status: Phase 8, system modules.** The `file`, `network`, `security`, `log`, `env`, `scan`,
+> `encode`, `decode`, `json`, `yaml`, `port`, and `clean` command groups work end to end. The rest
+> of the table below is still the plan. See [docs/roadmap.md](docs/roadmap.md).
 
 ## What works today
 
@@ -61,6 +61,13 @@ devnest json format api.json           one indentation width, key order untouche
 devnest json query api.json users[0]   select a subtree with a path expression
 devnest json to-yaml / to-csv          convert, with nested values reported not forced
 devnest yaml to-json manifest.yaml     multi-document YAML becomes a JSON array
+
+devnest port list                      what is listening, and which process holds it
+devnest port check 3000                is the port free? exit 3 says it is not
+devnest port free 3000                 ask the process to exit, after naming it
+devnest clean .                        what a build could regenerate, and its size
+devnest clean apply . --pattern dist   remove one kind of directory, after confirming
+devnest clean rules                    everything clean would ever consider removing
 ```
 
 Nothing in the file group deletes a file, and nothing that changes the disk does so without
@@ -75,8 +82,6 @@ output. The security module has no logger at all, which is the surest way to kee
 
 | | |
 |---|---|
-| `devnest clean` | Find and remove build artifacts, dry run by default |
-| `devnest port` | List listening ports with owning process, check one, free one |
 | `devnest git` | Repository summary, stale branches, contributors, large objects |
 | `devnest secret` | Scan for leaked credentials, findings always redacted |
 
