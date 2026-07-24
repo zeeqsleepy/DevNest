@@ -10,6 +10,19 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [0.1.0] - 2026-07-25
+
+The first release. Every command group described in `docs/commands.md` is implemented and tested on
+Windows, Linux, and macOS: files, networking, security, logs, environment, project scanning,
+encoding, JSON and YAML, ports, cleanup, git, credential scanning, configuration, self-check,
+completion, and export.
+
+**Pre-1.0 means no compatibility promise.** Command names, flag names, JSON field names, and exit
+codes can still change. The promise starts at 1.0, which is not declared until the surface has been
+used enough to be confident about it.
+
 ### Added: managing the configuration
 
 - `devnest config`: every value with the layer it came from — default, file, or environment. That
@@ -456,4 +469,5 @@ them. See `docs/roadmap.md` for what comes next.
 
 ---
 
-[Unreleased]: https://github.com/<owner>/devnest/commits/main
+[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.1.0...main
+[0.1.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.1.0
