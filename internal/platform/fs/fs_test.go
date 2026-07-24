@@ -304,6 +304,36 @@ func TestEnsureDirIsRepeatable(t *testing.T) {
 	}
 }
 
+// The probe writes, so the test that matters is that it cleans up after
+// itself: a check people run when something is already wrong must not leave
+// files behind in their configuration directory.
+func TestWritableLeavesNothingBehind(t *testing.T) {
+	directory := t.TempDir()
+
+	if err := (System{}).Writable(directory); err != nil {
+		t.Fatalf("Writable: %v", err)
+	}
+
+	entries, err := os.ReadDir(directory)
+	if err != nil {
+		t.Fatalf("ReadDir: %v", err)
+	}
+	if len(entries) != 0 {
+		t.Errorf("directory holds %d entries after the check", len(entries))
+	}
+}
+
+func TestWritableReportsADirectoryThatIsNotThere(t *testing.T) {
+	err := (System{}).Writable(filepath.Join(t.TempDir(), "absent"))
+
+	if err == nil {
+		t.Fatal("Writable on a missing directory returned no error")
+	}
+	if code := errors.CodeOf(err); code != errors.CodeNotFound {
+		t.Errorf("code = %q, want %q (%v)", code, errors.CodeNotFound, err)
+	}
+}
+
 func TestExists(t *testing.T) {
 	base := t.TempDir()
 	path := write(t, filepath.Join(base, "a.txt"), "x")

@@ -15,6 +15,7 @@ func NewRoot() *Command {
 			newCleanCommand(),
 			newCompletionCommand(),
 			newDecodeCommand(),
+			newDoctorCommand(),
 			newEncodeCommand(),
 			newEnvCommand(),
 			newFileCommand(),

@@ -10,6 +10,24 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: self-check
+
+- `devnest doctor`: check this installation. Whether the configuration file parses and holds values
+  DevNest accepts, whether the directory it lives in can be written to, whether the rule tables are
+  compiled in, whether git is present, and what the terminal was detected as.
+
+The report is written to be pasted into an issue: paths under the home directory are shortened to
+`~` and the hostname is not reported at all. Neither helps anyone reading a stack of bug reports,
+and both identify whoever filed one.
+
+A warning is something absent that DevNest works without — git on a machine that never runs the
+git commands is the ordinary case — and does not affect the exit code. A failed check exits 1,
+after the report is printed.
+
+`doctor` is the one command that still starts when the configuration file will not load, with the
+compiled defaults in its place. Everything else refuses, which is why the command that diagnoses
+that file must not.
+
 ### Added: shell completion
 
 - `devnest completion powershell|bash|zsh|fish`: print a completion script to stdout, for you to

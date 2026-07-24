@@ -1,8 +1,8 @@
 # Modules
 
 Status: `core/file`, `core/network`, `core/security`, `core/log`, `core/env`, `core/scan`,
-`core/encoding`, `core/data`, `core/port`, `core/clean`, `core/git`, and `core/secret`
-implemented; `core/doctor` planned
+`core/encoding`, `core/data`, `core/port`, `core/clean`, `core/git`, `core/secret`, and
+`core/doctor` implemented; `core/config` planned
 Last revised: 2026-07-24
 
 Every unit of real work in DevNest is a module: one package under `internal/core/`, one command
@@ -768,9 +768,27 @@ is writable, embedded rule sets load, required external tools for optional featu
 present, terminal capabilities are detected correctly.
 
 **Purpose.** The first thing to ask someone filing a bug report to run. Its output is designed to
-be pasted into an issue and contains no user-identifying paths beyond what is necessary.
+be pasted into an issue: paths under the home directory are shortened to `~` and the hostname is
+not reported at all.
 
-**Depends on.** `internal/config`, `platform/sys`, `platform/fs`.
+**Depends on.** `internal/config`, `platform/sys`, `platform/fs`, `platform/proc`.
+
+**Decided while building it.**
+
+- **Nothing here returns an error.** A configuration file that will not parse and a missing git are
+  the answers this module exists to produce; returning them as failures of the command would mean
+  the report never arrives. The CLI turns a failed check into a non-zero exit, after printing.
+- **A warning is not a failure.** A machine without git is a healthy machine: most commands never
+  call it. Only a failure clears `healthy` and changes the exit code.
+- **The rule tables are counted by the caller.** A module may not import another module, and the
+  tables belong to `secret` and `clean`. The CLI passes the counts in, which costs one struct and
+  keeps the layering intact.
+- **`doctor` starts even when the configuration will not load**, with the compiled defaults in its
+  place. Every other command refuses; the command whose job is to diagnose that file is the one
+  that must not.
+- **Writability is tested by writing.** Permission bits describe almost nothing on Windows, and an
+  access control list, a read-only mount, or a full disk can refuse a write the mode allows. The
+  probe in `platform/fs` writes a temporary file and removes it.
 
 ## Shared, below the modules
 

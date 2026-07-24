@@ -314,6 +314,34 @@ func (s System) EnsureDir(path string) error {
 	return nil
 }
 
+// Writable reports whether a directory can be written to, by writing to it and
+// removing what it wrote.
+//
+// Permission bits do not answer this question. On Windows they describe almost
+// nothing about what the current user may do, and everywhere else an access
+// control list, a read-only mount, or a full disk can refuse a write that the
+// mode says is allowed. The only honest test is the attempt.
+//
+// A nil error means the write and the removal both succeeded. The temporary
+// file is created with a recognisable name so that one left behind by a process
+// killed mid-check can be identified.
+func (s System) Writable(directory string) error {
+	file, err := os.CreateTemp(directory, ".devnest-writable-*")
+	if err != nil {
+		return wrapPath("write to", directory, err)
+	}
+
+	name := file.Name()
+	if err := file.Close(); err != nil {
+		os.Remove(name)
+		return wrapPath("write to", directory, err)
+	}
+	if err := os.Remove(name); err != nil {
+		return wrapPath("remove", name, err)
+	}
+	return nil
+}
+
 // Move renames source to destination, refusing to replace anything that is
 // already there.
 //

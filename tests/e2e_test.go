@@ -1310,3 +1310,80 @@ func TestCompletionRejectsAnUnknownShell(t *testing.T) {
 		t.Errorf("exit code = %d, want 2\nstdout: %s\nstderr: %s", got.exitCode, got.stdout, got.stderr)
 	}
 }
+
+// The self-check is the first thing a bug report is asked for, so it has to
+// run on an ordinary machine and exit zero there.
+func TestDoctorReportsAWorkingInstallation(t *testing.T) {
+	got := runBinary(t, "doctor")
+
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstdout: %s\nstderr: %s", got.exitCode, got.stdout, got.stderr)
+	}
+	for _, want := range []string{"configuration", "rule sets", "platform"} {
+		if !strings.Contains(got.stdout, want) {
+			t.Errorf("the report does not mention %q:\n%s", want, got.stdout)
+		}
+	}
+}
+
+// The report is written to be pasted into a public issue.
+func TestDoctorDoesNotNameTheMachine(t *testing.T) {
+	hostname, err := os.Hostname()
+	if err != nil || hostname == "" {
+		t.Skip("this machine has no hostname to leak")
+	}
+
+	got := runBinary(t, "doctor", "--output", "json")
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if strings.Contains(got.stdout, hostname) {
+		t.Errorf("the report names the machine:\n%s", got.stdout)
+	}
+
+	var envelope struct {
+		Data struct {
+			Healthy bool `json:"healthy"`
+			Checks  []struct {
+				Name   string `json:"name"`
+				Status string `json:"status"`
+			} `json:"checks"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(got.stdout), &envelope); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, got.stdout)
+	}
+	if !envelope.Data.Healthy || len(envelope.Data.Checks) == 0 {
+		t.Errorf("healthy = %v over %d checks", envelope.Data.Healthy, len(envelope.Data.Checks))
+	}
+}
+
+// A configuration file that will not parse stops every other command, so the
+// one command meant to diagnose it must still run and say so.
+func TestDoctorReportsABrokenConfigFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "broken.toml")
+	if err := os.WriteFile(path, []byte("general = [[["), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	command := exec.Command(binaryPath(t), "doctor", "--config", path)
+	var stdout, stderr bytes.Buffer
+	command.Stdout = &stdout
+	command.Stderr = &stderr
+
+	code := 0
+	if err := command.Run(); err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			t.Fatalf("run: %v", err)
+		}
+		code = exitErr.ExitCode()
+	}
+
+	if code != 1 {
+		t.Errorf("exit code = %d, want 1\nstdout: %s\nstderr: %s", code, stdout.String(), stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "failed") {
+		t.Errorf("the report does not show a failed check:\n%s", stdout.String())
+	}
+}

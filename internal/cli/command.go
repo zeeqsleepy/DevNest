@@ -44,6 +44,11 @@ type Command struct {
 	SetFlags func(*flag.FlagSet)
 	// Run executes the command. Nil means this node is a group only.
 	Run func(ctx context.Context, env *Env, args []string) error
+	// RunsWithoutConfig lets a command start when the configuration cannot be
+	// loaded, with the compiled defaults in its place. Only "doctor" sets it:
+	// the command whose job is to diagnose a broken configuration file is the
+	// one command a broken configuration file must not stop.
+	RunsWithoutConfig bool
 	// Commands are the subcommands of this node.
 	Commands []*Command
 
@@ -58,6 +63,13 @@ type Env struct {
 	Stdin    io.Reader
 	Stdout   io.Writer
 	Stderr   io.Writer
+
+	// ConfigPath is the file --config named, empty for the default location,
+	// and ConfigExplicit says which of the two it was. Only "doctor" needs
+	// them: every other command receives resolved values and has no business
+	// knowing where they came from.
+	ConfigPath     string
+	ConfigExplicit bool
 
 	command  string
 	started  time.Time

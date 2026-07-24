@@ -100,12 +100,19 @@ func newEnv(command *Command, started time.Time, globals *globalFlags, opts Opti
 		LookupEnv: opts.LookupEnv,
 	})
 	if err != nil {
-		return nil, err
+		if !command.RunsWithoutConfig {
+			return nil, err
+		}
+		resolved, warnings = config.Default(), nil
 	}
 
 	applyFlags(&resolved, globals)
 	if err := resolved.Validate(); err != nil {
-		return nil, err
+		if !command.RunsWithoutConfig {
+			return nil, err
+		}
+		resolved = config.Default()
+		applyFlags(&resolved, globals)
 	}
 
 	logger, err := newLogger(resolved, globals, opts)
@@ -122,14 +129,16 @@ func newEnv(command *Command, started time.Time, globals *globalFlags, opts Opti
 	}
 
 	return &Env{
-		Config:   resolved,
-		Logger:   logger,
-		Renderer: renderer,
-		Stdin:    opts.Stdin,
-		Stdout:   opts.Stdout,
-		Stderr:   opts.Stderr,
-		command:  strings.TrimPrefix(command.path(), "devnest "),
-		started:  started,
+		Config:         resolved,
+		Logger:         logger,
+		Renderer:       renderer,
+		Stdin:          opts.Stdin,
+		Stdout:         opts.Stdout,
+		Stderr:         opts.Stderr,
+		ConfigPath:     globals.configPath,
+		ConfigExplicit: globals.configPath != "",
+		command:        strings.TrimPrefix(command.path(), "devnest "),
+		started:        started,
 	}, nil
 }
 

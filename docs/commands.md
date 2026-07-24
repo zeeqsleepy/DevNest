@@ -729,9 +729,16 @@ way to answer "why is it behaving like that".
 |---|---|
 | `doctor` | Verify DevNest's own installation and configuration |
 
-Checks that the config file parses, the config directory is writable, embedded rule sets load,
-optional external tools are present, and terminal capabilities are detected correctly. Output is
-intended to be pasted into a bug report.
+Checks that the config file parses and holds values DevNest accepts, that the directory it lives
+in can be written to, that the rule tables are compiled in and not empty, that the external tools
+optional features need are present, and what the terminal was detected as.
+
+Output is intended to be pasted into a bug report: paths under the home directory are shortened to
+`~` and the hostname is not reported.
+
+A warning is something absent that DevNest works without, such as git on a machine that never runs
+the git commands. Only a failed check exits non-zero. `doctor` is also the one command that still
+runs when the configuration file will not load, because it is the command that says so.
 
 ---
 
