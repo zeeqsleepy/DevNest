@@ -306,7 +306,10 @@ either, because somebody tuning a rule set is testing real credentials as often 
 **False positives are the failure mode**, and the mitigations are in the rules rather than in
 advice. Every rule carries an entropy floor, including those matching a provider prefix, so a
 placeholder with the right shape and no information does not fire. Fixture directories, lock files,
-and dependency directories are skipped by default. A `devnest:allow-secret` comment silences one
+dependency directories, and generated build output (`.next`, `.nuxt`, `.svelte-kit`, `.turbo`,
+`coverage`, and the rest) are skipped by default. That last group was added after a scan of one
+ordinary Next.js project produced 288 findings inside `.next` and one outside it: a report that
+long is one nobody reads to the end, which is how the finding that mattered gets missed. A `devnest:allow-secret` comment silences one
 line. The result is described as candidates, in those words, because a scanner people have learned
 to ignore protects nothing.
 

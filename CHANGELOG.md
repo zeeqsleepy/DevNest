@@ -10,7 +10,15 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
-Nothing yet.
+### Changed: credential scanning skips generated build output
+
+`.next`, `.nuxt`, `.svelte-kit`, `.output`, `.angular`, `.parcel-cache`, `.turbo`, `.cache`,
+`coverage`, `.gradle`, and `.dart_tool` join the directories a scan does not descend into.
+
+Scanning one ordinary Next.js project produced 291 candidates: one real, two false positives from a
+CI workflow, and **288 from inside `.next`** — every one a placeholder shipped inside a bundled
+dependency. A report that long is one nobody reads to the end, which is how the finding at the top
+of it gets missed.
 
 ## [0.1.0] - 2026-07-25
 

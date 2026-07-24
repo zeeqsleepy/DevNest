@@ -28,9 +28,19 @@ const (
 // excludedNames are skipped wherever they appear. Lock files are enormous and
 // full of hashes that look like keys; the rest are directories no credential
 // of the user's lives in.
+//
+// The framework build directories are here for a reason worth stating: a
+// scan of one ordinary Next.js project produced 288 findings, every one of
+// them inside .next, and every one of them a placeholder from a bundled
+// dependency. A report that long is a report nobody reads to the end, which
+// is how the one real finding at the top of it gets missed.
 var excludedNames = []string{
 	".git", ".hg", ".svn", "node_modules", "vendor", "dist", "build", "target",
 	"__pycache__", ".venv", "venv", ".terraform",
+	// Framework and tool build output. Generated, never authored, and the
+	// place a bundled dependency's example credentials end up.
+	".next", ".nuxt", ".svelte-kit", ".output", ".angular", ".parcel-cache",
+	".turbo", ".cache", "coverage", ".gradle", ".dart_tool",
 	"package-lock.json", "yarn.lock", "pnpm-lock.yaml", "Cargo.lock",
 	"go.sum", "poetry.lock", "composer.lock", "Gemfile.lock",
 }
