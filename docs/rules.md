@@ -1,7 +1,7 @@
 # Project Rules
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: current as of Phase 10
+Last revised: 2026-07-24
 
 Rules exist so that structural questions get answered once instead of every pull request. They are
 short and blunt on purpose. Where a rule is absolute it says so; where judgement applies it says

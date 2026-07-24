@@ -1,6 +1,6 @@
 # Development Guide
 
-Status: current as of Phase 8
+Status: current as of Phase 10
 Last revised: 2026-07-24
 
 How to set up a machine for working on DevNest and how the day-to-day loop goes.

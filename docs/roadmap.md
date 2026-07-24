@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: phases 0 through 9 complete
+Status: phases 0 through 9 complete, phase 10 in progress
 Last revised: 2026-07-24
 
 Where the project is going and roughly in what order. Phases are ordered by dependency, not by

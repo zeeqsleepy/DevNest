@@ -1,7 +1,7 @@
 # Contributing Guide
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: current as of Phase 10
+Last revised: 2026-07-24
 
 `development-guide.md` covers setting up and doing the work. This document covers getting a change
 accepted.

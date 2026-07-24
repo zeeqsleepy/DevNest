@@ -1,7 +1,7 @@
 # Testing Strategy
 
-Status: current as of Phase 2
-Last revised: 2026-07-23
+Status: current as of Phase 10
+Last revised: 2026-07-24
 
 Tests exist so that changing this codebase in a year is not frightening. That goal drives every
 decision below. In particular, tests must be fast enough to run constantly and reliable enough

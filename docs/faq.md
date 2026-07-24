@@ -1,7 +1,7 @@
 # FAQ
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: current as of Phase 10
+Last revised: 2026-07-24
 
 ## About the project
 
@@ -64,7 +64,8 @@ daily users, not to make the tool usable.
 
 **Does it send anything anywhere?**
 
-Only when you run `devnest http`, which is the command whose entire purpose is sending a request.
+Only when you run a `devnest network` command, which is the group whose entire purpose is sending
+a request.
 No telemetry, no analytics, no error reporting, no update check, not even opt-in. The absence of
 the code is a stronger guarantee than a default setting.
 
@@ -79,7 +80,7 @@ path before it happens.
 **Can I use it in CI?**
 
 That is a primary use case. Every command has `--output json` with stable field names, meaningful
-exit codes, and clean stdout/stderr separation. `devnest secret scan` and `devnest hash verify`
+exit codes, and clean stdout/stderr separation. `devnest secret scan` and `devnest security checksum`
 exit non-zero on a negative result specifically so they work as gates without output parsing.
 
 **Does it need admin rights?**

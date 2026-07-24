@@ -1,7 +1,8 @@
 # Troubleshooting
 
-Status: draft, Phase 0. Anticipated issues; the tool is not yet implemented
-Last revised: 2026-07-23
+Status: current as of Phase 10. Every command shown here runs; the issues themselves are
+still partly anticipated rather than reported
+Last revised: 2026-07-24
 
 ## Start here
 

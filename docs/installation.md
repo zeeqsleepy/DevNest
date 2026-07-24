@@ -1,7 +1,8 @@
 # Installation
 
-Status: draft, Phase 0. Describes the intended installation methods; no release exists yet
-Last revised: 2026-07-23
+Status: describes the intended installation methods; no release exists yet, so building
+from source is the only one that works today
+Last revised: 2026-07-24
 
 DevNest is a single executable with no runtime dependency. Every method below results in the same
 binary; pick whichever fits how you manage tools.

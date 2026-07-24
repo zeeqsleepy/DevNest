@@ -1,6 +1,6 @@
 # Release Process
 
-Status: draft, Phase 0
+Status: draft; no release has been made yet
 Last revised: 2026-07-23
 
 How a version gets from a commit on the main branch to a binary someone downloads.

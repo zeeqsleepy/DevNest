@@ -1,7 +1,7 @@
 # Application Flow
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: current as of Phase 10
+Last revised: 2026-07-24
 
 What happens between the user pressing Enter and the process exiting. Ordering matters here: most
 of the awkward bugs in a CLI come from doing something in the wrong order during startup.

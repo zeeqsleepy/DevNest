@@ -1,7 +1,7 @@
 # Schema
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: implemented, current as of Phase 10
+Last revised: 2026-07-24
 
 The shapes of things: how packages are structured internally, how data moves between them, what
 configuration looks like, and what the input and output contracts are.

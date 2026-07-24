@@ -1,8 +1,7 @@
 # CLI Reference
 
-Status: partially implemented. The grammar, global flags, exit codes, and the `file`, `network`,
-`security`, `log`, `env`, `scan`, `encode`, `decode`, `json`, `yaml`, `port`, `clean`, `git`, and
-`secret` command groups below are live as of Phase 9
+Status: implemented as of Phase 10, apart from the `--dry-run`, `--yes`, and `--compact` flags,
+which are marked where they appear
 Last revised: 2026-07-24
 
 `commands.md` lists what the commands are. This document covers how the interface is put
@@ -25,8 +24,8 @@ devnest <group> [action] [target...] [flags]
 Both of these are valid and identical:
 
 ```
-devnest scan
-devnest scan run .
+devnest secret
+devnest secret scan .
 ```
 
 Two levels of nesting is the ceiling. `devnest a b c d` means the grouping is wrong and the

@@ -1,8 +1,8 @@
 # DevNest: Product Requirements
 
-Status: draft, Phase 0
+Status: current as of Phase 10; the scope below is what shipped
 Owner: project maintainer
-Last revised: 2026-07-23
+Last revised: 2026-07-24
 
 ## Why this exists
 

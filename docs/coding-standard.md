@@ -1,7 +1,7 @@
 # Coding Standard
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: current as of Phase 10
+Last revised: 2026-07-24
 
 Style rules for DevNest's Go code. Anything the standard Go toolchain already decides (formatting,
 import grouping, brace placement) is decided by the toolchain and not discussed here. `gofmt`

@@ -1,7 +1,8 @@
 # Quick Start
 
-Status: draft, Phase 0. Describes the intended first-use experience; nothing is implemented
-Last revised: 2026-07-23
+Status: current as of Phase 10. Every command shown here runs, and a test runs each of
+these examples against the built binary
+Last revised: 2026-07-24
 
 Five minutes with DevNest. Installation is in `installation.md`; this assumes `devnest` is on
 PATH.
@@ -52,13 +53,13 @@ Files, directories, total size, breakdown by type, largest files. Respects `.git
 default.
 
 ```
-devnest scan large --top 20
+devnest scan types --limit 20
 ```
 
-The twenty largest files, which is usually where the surprise is.
+The twenty biggest file types by size, which is usually where the surprise is.
 
 ```
-devnest scan size
+devnest file size
 ```
 
 Size by directory, largest first. The usual answer is `node_modules`, which leads to the next

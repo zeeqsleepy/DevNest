@@ -1,7 +1,7 @@
 # Configuration
 
-Status: implemented, except the `devnest config` command
-Last revised: 2026-07-23
+Status: implemented, including the `devnest config` commands
+Last revised: 2026-07-24
 
 DevNest works fully with no configuration at all. That is the primary design constraint here: a
 tool that needs setup before first use has already lost most of its potential users. Configuration

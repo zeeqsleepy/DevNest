@@ -1,7 +1,7 @@
 # Internal Interfaces
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: draft; no public API surface exists yet, see roadmap.md
+Last revised: 2026-07-24
 
 How the parts of DevNest talk to each other. This is an internal document: nothing described here
 is a public API, and everything under `internal/` can change without notice. The public commitment

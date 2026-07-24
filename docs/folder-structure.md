@@ -1,7 +1,7 @@
 # Folder Structure
 
-Status: draft, Phase 0
-Last revised: 2026-07-23
+Status: current as of Phase 10
+Last revised: 2026-07-24
 
 Every directory in this repository has a stated purpose. If a file does not clearly belong in one
 of them, that is a signal the file is doing something the project has not decided about yet.
