@@ -138,9 +138,11 @@ failure there means deleting the release, which costs nothing before anybody has
 
 - One archive per platform and architecture: `.zip` for Windows, `.tar.gz` for Linux and macOS.
 - `checksums.txt` with SHA-256 for every artifact.
-- Release notes taken from the changelog section for this version, extracted by
-  `scripts/release-notes.sh`. Not generated from the commit list: that repeats what the commits
-  already say and puts every author's email address on a public page.
+- Release notes: the commit list for the tag, grouped into features, fixes, and everything else,
+  with documentation and test commits filtered out. It is built from the local git log rather than
+  from the GitHub API, because the API source appends each commit's author name and email to every
+  line and a release page is public. The changelog people actually read is `CHANGELOG.md`, linked
+  from the release.
 
 **Package channels:**
 
