@@ -10,6 +10,30 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: managing the configuration
+
+- `devnest config`: every value with the layer it came from — default, file, or environment. That
+  column is the fastest answer to "why is it behaving like that".
+- `devnest config list`, `config get <key>`, `config path`, `config validate`: read what is set.
+- `devnest config set <key> <value>`, `config unset <key>`, `config init`: change it without
+  opening the file.
+
+Editing preserves the file. Setting one key rewrites one line and leaves the comments and layout
+exactly as they were, because a configuration file is hand-written and a tool that reformats it to
+change one value is a tool people stop using. A value the schema rejects is refused before anything
+is written, so the command that fixes a broken configuration cannot create one. `config init` never
+overwrites an existing file.
+
+### Fixed: documentation examples
+
+Every `devnest` line in the documentation is now checked against the real binary by a test, which
+found `devnest hash` and `devnest http` (renamed to `devnest file hash` and `devnest network http`
+in earlier phases), a `--skip-unreadable` flag that never existed, and the whole `config` group,
+which the documentation had described since the first commit.
+
+Help text now lists a command's own flags. It had only ever shown the global ones, so `--method`,
+`--fail-on`, and every other flag existed in the documentation and nowhere the user could see them.
+
 ### Added: exporting results to a file
 
 - `--export <path>` on every command: write the result to a file as well as to the terminal. The

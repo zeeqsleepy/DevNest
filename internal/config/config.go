@@ -153,60 +153,78 @@ type Source struct {
 // Load resolves defaults, then the configuration file, then the environment.
 // The caller applies flag overrides afterwards and then calls Validate.
 func Load(source Source) (Config, []Warning, error) {
+	config, warnings, _, err := LoadDetailed(source)
+	return config, warnings, err
+}
+
+// LoadDetailed is Load with the layer each value came from, keyed by
+// "section.key". A key absent from the map came from the compiled defaults.
+//
+// Only the configuration commands need this. Everything else receives resolved
+// values, and a command that behaved differently depending on where a value
+// came from would be a command nobody could reason about.
+func LoadDetailed(source Source) (Config, []Warning, map[string]string, error) {
 	config := Default()
+	origins := map[string]string{}
 
 	path := source.Path
 	if path == "" {
 		resolved, err := DefaultPath()
 		if err != nil {
 			if source.Explicit {
-				return config, nil, err
+				return config, nil, origins, err
 			}
 			// No config directory on this system is not fatal; defaults apply.
-			return config, nil, nil
+			return config, nil, origins, nil
 		}
 		path = resolved
 	}
 
-	warnings, err := applyFile(&config, path, source.Explicit)
+	fromFile, warnings, err := applyFile(&config, path, source.Explicit)
+	for _, key := range fromFile {
+		origins[key] = OriginFile
+	}
 	if err != nil {
-		return config, warnings, err
+		return config, warnings, origins, err
 	}
 
 	lookup := source.LookupEnv
 	if lookup == nil {
 		lookup = os.LookupEnv
 	}
-	envWarnings, err := applyEnv(&config, lookup)
+	fromEnv, envWarnings, err := applyEnv(&config, lookup)
+	for _, key := range fromEnv {
+		origins[key] = OriginEnvironment
+	}
 	warnings = append(warnings, envWarnings...)
 	if err != nil {
-		return config, warnings, err
+		return config, warnings, origins, err
 	}
 
-	return config, warnings, nil
+	return config, warnings, origins, nil
 }
 
-func applyFile(config *Config, path string, explicit bool) ([]Warning, error) {
+func applyFile(config *Config, path string, explicit bool) ([]string, []Warning, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if explicit {
-				return nil, errors.Wrap(err, errors.CodeNotFound,
+				return nil, nil, errors.Wrap(err, errors.CodeNotFound,
 					"configuration file %s does not exist", path).
 					WithHint("check the path, or omit --config to use the default location")
 			}
-			return nil, nil
+			return nil, nil, nil
 		}
 		if os.IsPermission(err) {
-			return nil, errors.Wrap(err, errors.CodePermissionDenied,
+			return nil, nil, errors.Wrap(err, errors.CodePermissionDenied,
 				"cannot read configuration file %s", path)
 		}
-		return nil, errors.Wrap(err, errors.CodeIO, "cannot read configuration file %s", path)
+		return nil, nil, errors.Wrap(err, errors.CodeIO, "cannot read configuration file %s", path)
 	}
 
 	entries, err := parseTOML(path, data)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	return bind(config, entries)
 }

@@ -1522,3 +1522,88 @@ func TestExportCommandWritesOneCombinedReport(t *testing.T) {
 		}
 	}
 }
+
+// The configuration commands are the ones that write to the user's own file,
+// so the round trip is checked against a real one.
+func TestConfigRoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	run := func(args ...string) result {
+		t.Helper()
+		command := exec.Command(binaryPath(t), append(args, "--config", path)...)
+		var stdout, stderr bytes.Buffer
+		command.Stdout = &stdout
+		command.Stderr = &stderr
+		code := 0
+		if err := command.Run(); err != nil {
+			var exitErr *exec.ExitError
+			if !errors.As(err, &exitErr) {
+				t.Fatalf("run: %v", err)
+			}
+			code = exitErr.ExitCode()
+		}
+		return result{stdout: stdout.String(), stderr: stderr.String(), exitCode: code}
+	}
+
+	if got := run("config", "init"); got.exitCode != 0 {
+		t.Fatalf("config init exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("config init wrote no file: %v", err)
+	}
+
+	if got := run("config", "set", "general.output", "json"); got.exitCode != 0 {
+		t.Fatalf("config set exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+
+	// The value has to be in force, not only in the file: the next command
+	// renders as JSON because of it.
+	got := run("config", "get", "general.output")
+	if got.exitCode != 0 {
+		t.Fatalf("config get exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	var envelope struct {
+		Data struct {
+			Value  string `json:"value"`
+			Origin string `json:"origin"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(got.stdout), &envelope); err != nil {
+		t.Fatalf("config get is not JSON: %v\n%s", err, got.stdout)
+	}
+	if envelope.Data.Value != "json" || envelope.Data.Origin != "file" {
+		t.Errorf("value = %q from %q, want \"json\" from \"file\"", envelope.Data.Value, envelope.Data.Origin)
+	}
+
+	if got := run("config", "unset", "general.output"); got.exitCode != 0 {
+		t.Fatalf("config unset exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if got := run("config", "get", "general.output"); !strings.Contains(got.stdout, "table") {
+		t.Errorf("the default did not come back:\n%s", got.stdout)
+	}
+	if got := run("config", "validate"); got.exitCode != 0 {
+		t.Errorf("config validate exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+}
+
+// A value the schema rejects must not reach the file: the command that fixes a
+// broken configuration cannot be the command that breaks one.
+func TestConfigSetRefusesABadValueAndKeepsTheFile(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.toml")
+	original := "[general]\noutput = \"table\"\n"
+	if err := os.WriteFile(path, []byte(original), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	command := exec.Command(binaryPath(t), "config", "set", "general.output", "pdf", "--config", path)
+	if err := command.Run(); err == nil {
+		t.Fatal("an invalid value was accepted")
+	}
+
+	contents, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read back: %v", err)
+	}
+	if string(contents) != original {
+		t.Errorf("the file changed:\n%s", contents)
+	}
+}

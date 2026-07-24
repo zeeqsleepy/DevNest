@@ -41,43 +41,44 @@ type field struct {
 	key     string
 	kind    kind
 	set     func(*Config, any)
+	get     func(Config) any
 }
 
 func fields() []field {
 	return []field{
-		{"general", "output", kindString, func(c *Config, v any) { c.General.Output = v.(string) }},
-		{"general", "color", kindString, func(c *Config, v any) { c.General.Color = v.(string) }},
-		{"general", "verbosity", kindString, func(c *Config, v any) { c.General.Verbosity = v.(string) }},
-		{"general", "confirm", kindBool, func(c *Config, v any) { c.General.Confirm = v.(bool) }},
+		{"general", "output", kindString, func(c *Config, v any) { c.General.Output = v.(string) }, func(c Config) any { return c.General.Output }},
+		{"general", "color", kindString, func(c *Config, v any) { c.General.Color = v.(string) }, func(c Config) any { return c.General.Color }},
+		{"general", "verbosity", kindString, func(c *Config, v any) { c.General.Verbosity = v.(string) }, func(c Config) any { return c.General.Verbosity }},
+		{"general", "confirm", kindBool, func(c *Config, v any) { c.General.Confirm = v.(bool) }, func(c Config) any { return c.General.Confirm }},
 
-		{"scan", "follow_symlinks", kindBool, func(c *Config, v any) { c.Scan.FollowSymlinks = v.(bool) }},
-		{"scan", "respect_ignore", kindBool, func(c *Config, v any) { c.Scan.RespectIgnore = v.(bool) }},
-		{"scan", "max_depth", kindInt, func(c *Config, v any) { c.Scan.MaxDepth = v.(int64) }},
-		{"scan", "exclude", kindStringList, func(c *Config, v any) { c.Scan.Exclude = v.([]string) }},
+		{"scan", "follow_symlinks", kindBool, func(c *Config, v any) { c.Scan.FollowSymlinks = v.(bool) }, func(c Config) any { return c.Scan.FollowSymlinks }},
+		{"scan", "respect_ignore", kindBool, func(c *Config, v any) { c.Scan.RespectIgnore = v.(bool) }, func(c Config) any { return c.Scan.RespectIgnore }},
+		{"scan", "max_depth", kindInt, func(c *Config, v any) { c.Scan.MaxDepth = v.(int64) }, func(c Config) any { return c.Scan.MaxDepth }},
+		{"scan", "exclude", kindStringList, func(c *Config, v any) { c.Scan.Exclude = v.([]string) }, func(c Config) any { return c.Scan.Exclude }},
 
-		{"clean", "patterns", kindStringList, func(c *Config, v any) { c.Clean.Patterns = v.([]string) }},
-		{"clean", "protect", kindStringList, func(c *Config, v any) { c.Clean.Protect = v.([]string) }},
-		{"clean", "require_confirm", kindBool, func(c *Config, v any) { c.Clean.RequireConfirm = v.(bool) }},
+		{"clean", "patterns", kindStringList, func(c *Config, v any) { c.Clean.Patterns = v.([]string) }, func(c Config) any { return c.Clean.Patterns }},
+		{"clean", "protect", kindStringList, func(c *Config, v any) { c.Clean.Protect = v.([]string) }, func(c Config) any { return c.Clean.Protect }},
+		{"clean", "require_confirm", kindBool, func(c *Config, v any) { c.Clean.RequireConfirm = v.(bool) }, func(c Config) any { return c.Clean.RequireConfirm }},
 
 		// devnest:allow-secret
-		{"secret", "entropy_threshold", kindFloat, func(c *Config, v any) { c.Secret.EntropyThreshold = v.(float64) }},
-		{"secret", "exclude_paths", kindStringList, func(c *Config, v any) { c.Secret.ExcludePaths = v.([]string) }},
-		{"secret", "custom_rules", kindStringList, func(c *Config, v any) { c.Secret.CustomRules = v.([]string) }},
+		{"secret", "entropy_threshold", kindFloat, func(c *Config, v any) { c.Secret.EntropyThreshold = v.(float64) }, func(c Config) any { return c.Secret.EntropyThreshold }},
+		{"secret", "exclude_paths", kindStringList, func(c *Config, v any) { c.Secret.ExcludePaths = v.([]string) }, func(c Config) any { return c.Secret.ExcludePaths }},
+		{"secret", "custom_rules", kindStringList, func(c *Config, v any) { c.Secret.CustomRules = v.([]string) }, func(c Config) any { return c.Secret.CustomRules }},
 
-		{"security", "password_length", kindInt, func(c *Config, v any) { c.Security.PasswordLength = v.(int64) }},
-		{"security", "password_symbols", kindBool, func(c *Config, v any) { c.Security.PasswordSymbols = v.(bool) }},
+		{"security", "password_length", kindInt, func(c *Config, v any) { c.Security.PasswordLength = v.(int64) }, func(c Config) any { return c.Security.PasswordLength }},
+		{"security", "password_symbols", kindBool, func(c *Config, v any) { c.Security.PasswordSymbols = v.(bool) }, func(c Config) any { return c.Security.PasswordSymbols }},
 		{"security", "password_exclude_ambiguous", kindBool, func(c *Config, v any) {
 			c.Security.PasswordExcludeAmbiguous = v.(bool)
-		}},
+		}, func(c Config) any { return c.Security.PasswordExcludeAmbiguous }},
 
-		{"network", "timeout_ms", kindInt, func(c *Config, v any) { c.Network.TimeoutMs = v.(int64) }},
-		{"network", "follow_redirect", kindBool, func(c *Config, v any) { c.Network.FollowRedirect = v.(bool) }},
-		{"network", "max_redirects", kindInt, func(c *Config, v any) { c.Network.MaxRedirects = v.(int64) }},
-		{"network", "attempts", kindInt, func(c *Config, v any) { c.Network.Attempts = v.(int64) }},
-		{"network", "interval_ms", kindInt, func(c *Config, v any) { c.Network.IntervalMs = v.(int64) }},
+		{"network", "timeout_ms", kindInt, func(c *Config, v any) { c.Network.TimeoutMs = v.(int64) }, func(c Config) any { return c.Network.TimeoutMs }},
+		{"network", "follow_redirect", kindBool, func(c *Config, v any) { c.Network.FollowRedirect = v.(bool) }, func(c Config) any { return c.Network.FollowRedirect }},
+		{"network", "max_redirects", kindInt, func(c *Config, v any) { c.Network.MaxRedirects = v.(int64) }, func(c Config) any { return c.Network.MaxRedirects }},
+		{"network", "attempts", kindInt, func(c *Config, v any) { c.Network.Attempts = v.(int64) }, func(c Config) any { return c.Network.Attempts }},
+		{"network", "interval_ms", kindInt, func(c *Config, v any) { c.Network.IntervalMs = v.(int64) }, func(c Config) any { return c.Network.IntervalMs }},
 
-		{"export", "directory", kindString, func(c *Config, v any) { c.Export.Directory = v.(string) }},
-		{"export", "timestamp_files", kindBool, func(c *Config, v any) { c.Export.TimestampFiles = v.(bool) }},
+		{"export", "directory", kindString, func(c *Config, v any) { c.Export.Directory = v.(string) }, func(c Config) any { return c.Export.Directory }},
+		{"export", "timestamp_files", kindBool, func(c *Config, v any) { c.Export.TimestampFiles = v.(bool) }, func(c Config) any { return c.Export.TimestampFiles }},
 	}
 }
 
@@ -199,10 +200,12 @@ func typeName(value any) string {
 }
 
 // bind applies parsed file entries to config, reporting keys DevNest does not
-// recognise as warnings rather than failing.
-func bind(config *Config, entries []entry) ([]Warning, error) {
+// recognise as warnings rather than failing. The keys it applied come back, so
+// that "devnest config" can say which values came from the file.
+func bind(config *Config, entries []entry) ([]string, []Warning, error) {
 	index := fieldIndex()
 	var warnings []Warning
+	var applied []string
 
 	for _, e := range entries {
 		where := e.where()
@@ -216,16 +219,20 @@ func bind(config *Config, entries []entry) ([]Warning, error) {
 		}
 		value, err := f.coerce(e.value, where)
 		if err != nil {
-			return warnings, err
+			return applied, warnings, err
 		}
 		f.set(config, value)
+		applied = append(applied, e.section+"."+e.key)
 	}
 
-	return warnings, nil
+	return applied, warnings, nil
 }
 
-// applyEnv overlays environment variables on top of the file values.
-func applyEnv(config *Config, lookup func(string) (string, bool)) ([]Warning, error) {
+// applyEnv overlays environment variables on top of the file values, reporting
+// which keys it set.
+func applyEnv(config *Config, lookup func(string) (string, bool)) ([]string, []Warning, error) {
+	var applied []string
+
 	for _, f := range fields() {
 		name := f.envName()
 		text, ok := lookup(name)
@@ -234,9 +241,10 @@ func applyEnv(config *Config, lookup func(string) (string, bool)) ([]Warning, er
 		}
 		value, err := f.parseString(text, name)
 		if err != nil {
-			return nil, err
+			return applied, nil, err
 		}
 		f.set(config, value)
+		applied = append(applied, f.section+"."+f.key)
 	}
-	return nil, nil
+	return applied, nil, nil
 }

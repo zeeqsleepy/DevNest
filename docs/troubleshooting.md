@@ -100,11 +100,15 @@ To see which paths were skipped:
 devnest scan --verbose
 ```
 
-To skip them silently:
+To keep them out of the terminal:
 
 ```
-devnest scan --skip-unreadable
+devnest scan --quiet
 ```
+
+They are still counted in the result and still listed in the `warnings` array of `--output json`.
+There is no flag that drops them entirely: a summary that quietly covered less of the tree than it
+says it did is the one result nobody should be able to ask for.
 
 To read them, run the terminal elevated. DevNest never requests elevation on its own.
 
@@ -237,7 +241,7 @@ everyone.
 The default is 30 seconds.
 
 ```
-devnest http https://slow.example.com --timeout 120s
+devnest network http https://slow.example.com --timeout 120s
 ```
 
 If it fails immediately rather than timing out, it is DNS, a proxy, or TLS. `--verbose` shows the

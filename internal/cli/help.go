@@ -2,6 +2,7 @@ package cli
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	"io"
 	"strings"
@@ -65,7 +66,34 @@ func writeCommandHelp(w io.Writer, command *Command) {
 		fmt.Fprintln(w)
 	}
 
+	writeFlagList(w, "Flags", commandFlagHelp(command))
 	writeFlagList(w, "Global flags", globalFlagHelp())
+}
+
+// commandFlagHelp describes a command's own flags, read back from the flag set
+// it registers. Reading them back rather than writing them out a second time is
+// what stops help from describing a flag the command no longer has.
+func commandFlagHelp(command *Command) []flagHelp {
+	if command.SetFlags == nil {
+		return nil
+	}
+
+	set := flag.NewFlagSet(command.Name, flag.ContinueOnError)
+	set.SetOutput(io.Discard)
+	command.SetFlags(set)
+
+	var items []flagHelp
+	set.VisitAll(func(item *flag.Flag) {
+		name := "    --" + item.Name
+		if len(item.Name) == 1 {
+			name = "-" + item.Name
+		}
+		if boolean, ok := item.Value.(interface{ IsBoolFlag() bool }); !ok || !boolean.IsBoolFlag() {
+			name += " <value>"
+		}
+		items = append(items, flagHelp{Name: name, Description: item.Usage})
+	})
+	return items
 }
 
 func writeCommandList(w io.Writer, commands []*Command) {

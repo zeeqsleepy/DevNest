@@ -106,13 +106,13 @@ Names the process and asks for confirmation before stopping it. Nothing happens 
 ## Check a file
 
 ```
-devnest hash build\app.exe
+devnest file hash build\app.exe
 ```
 
 SHA-256 by default. `--algorithm md5` or `--all` for every algorithm in a single read of the file.
 
 ```
-devnest hash verify build\app.exe 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
+devnest security checksum build\app.exe 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08
 ```
 
 Exits 0 on a match and 1 on a mismatch, which is what makes it useful in a CI step.
@@ -152,7 +152,7 @@ devnest network http https://api.example.com/status | devnest json --stdin
 ## Send a request
 
 ```
-devnest http https://api.example.com/health
+devnest network http https://api.example.com/health
 ```
 
 Status, timing breakdown (DNS, connect, TLS, first byte, total), headers, body, and certificate

@@ -29,10 +29,9 @@ In code the split is: `config.Load` handles defaults, file, and environment, and
 applies flag overrides on the returned value before calling `Validate`. Flags are the only source
 whose "was it set" question the CLI layer can answer, which is why that step lives there.
 
-`devnest config` will print the resolved configuration **with the origin of each value**: default,
+`devnest config` prints the resolved configuration **with the origin of each value**: default,
 file, environment, or flag. That single feature answers most "why is it behaving like that"
-questions without anyone reading this document. The command and the origin tracking it needs are
-not implemented yet; they arrive together, since neither is useful alone.
+questions without anyone reading this document.
 
 ## File location
 
@@ -122,7 +121,7 @@ recorded in the changelog.
 
 ```toml
 [general]
-output          = "table"      # table | json  (csv and markdown are not implemented yet)
+output          = "table"      # table | json | csv | markdown
 color           = "auto"       # auto | always | never
 verbosity       = "warn"       # error | warn | info | debug
 confirm         = true         # prompt before destructive operations
@@ -201,13 +200,13 @@ message.
 A malformed environment variable is fatal on the same terms, and the message names the variable:
 `DEVNEST_SCAN_MAX_DEPTH expects an integer, found "deep"`.
 
-`devnest config validate` will check the file without running anything else, which is the right
-thing to put in a setup script. Until that command exists, any invocation reports the same errors,
-so `devnest version --config <path>` serves the purpose.
+`devnest config validate` checks the file without running anything else, which is the right thing
+to put in a setup script.
 
 ## Managing configuration
 
-None of these commands exist yet; they are the planned surface.
+Every command below writes to, or reads from, the file resolved by `--config` or the default
+location.
 
 ```
 devnest config                    resolved values, with the origin of each

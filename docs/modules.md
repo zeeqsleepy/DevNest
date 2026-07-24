@@ -1,8 +1,6 @@
 # Modules
 
-Status: `core/file`, `core/network`, `core/security`, `core/log`, `core/env`, `core/scan`,
-`core/encoding`, `core/data`, `core/port`, `core/clean`, `core/git`, `core/secret`, and
-`core/doctor` implemented; `core/config` planned
+Status: every module in this document is implemented.
 Last revised: 2026-07-24
 
 Every unit of real work in DevNest is a module: one package under `internal/core/`, one command
@@ -758,6 +756,23 @@ the loading and merging logic lives in `internal/config`, and this module is the
 view of it.
 
 **Depends on.** `internal/config`, `platform/fs`.
+
+**Decided while building it.**
+
+- **The origin of a value is the product.** `internal/config` gained `LoadDetailed`, which reports
+  the layer each value came from. Every other command still receives resolved values only: one that
+  behaved differently depending on where a value came from would be one nobody could reason about.
+- **An edit rewrites one line.** The file is hand-written and hand-commented, and a tool that
+  reformats the whole thing to change one value is a tool people stop using. Setting a key replaces
+  its line, or adds the key, or adds its section, and leaves everything else exactly as it was.
+- **A change is validated before it is written.** The edited configuration is applied and validated
+  in memory first, so a rejected value leaves the previous file intact. The command that fixes a
+  broken configuration must not be able to create one.
+- **`config init` never overwrites.** It is the one file on the machine holding decisions somebody
+  made by hand.
+- **A file that is not there is not an error here.** For every other command a `--config` path that
+  does not exist is fatal; for these it is the ordinary state of a machine nobody has configured
+  yet, and it is reported rather than refused.
 
 ---
 

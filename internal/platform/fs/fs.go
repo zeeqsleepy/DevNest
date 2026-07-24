@@ -255,6 +255,17 @@ func (s System) Open(path string) (io.ReadCloser, error) {
 	return file, nil
 }
 
+// ReadFile returns a whole file. It is for the small ones a caller genuinely
+// holds in memory, such as a configuration file; anything that streams uses
+// Open instead.
+func (s System) ReadFile(path string) ([]byte, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, wrapPath("read", path, err)
+	}
+	return data, nil
+}
+
 // Exists reports whether a path exists, without following a final symlink.
 func (s System) Exists(path string) (bool, error) {
 	_, err := os.Lstat(path)

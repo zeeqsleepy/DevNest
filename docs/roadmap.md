@@ -276,14 +276,20 @@ Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
 
 ## Phase 10: Polish and 1.0
 
-- Shell completion for PowerShell, bash, zsh, fish.
-- `core/doctor`.
-- `devnest export` multi-command reports.
+- Shell completion for PowerShell, bash, zsh, fish. *(done)*
+- `core/doctor`. *(done)*
+- `--export` on every command, the markdown renderer, and `devnest export` multi-command
+  reports. *(done)*
+- `core/config`, which was not on this list and should have been: the documentation had told
+  people to run `devnest config` since Phase 0, and the pass over the examples below is what
+  found it. *(done)*
 - Packaging: winget, a self-hosted Homebrew tap, deb and rpm from the release page, tarballs.
   Homebrew core and the Linux distribution repositories require an OSI-approved licence, and the
   Commons Clause means DevNest's is not one. The channels above have no such requirement, and
   building binaries from source is unrestricted either way.
-- Documentation pass across everything, with all examples tested.
+- Documentation pass across everything, with all examples tested. *(in progress: every `devnest`
+  line in the documentation is now checked against the real binary by a test, which is what
+  found the missing `config` group, three renamed commands, and a flag that never existed.)*
 - A full benchmark run against `performance.md`, with baselines committed.
 
 **1.0 means the compatibility promise starts.** Command names, flag names, JSON field names, and

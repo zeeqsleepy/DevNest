@@ -1,7 +1,8 @@
 # Commands
 
-Status: the `file`, `network`, `security`, and `log` groups are implemented, along with `help` and
-`version`. Everything else is planned.
+Status: every group below is implemented apart from the reserved names at the end. `init` and the
+scaffolding templates are the one deferred item, and are described in `roadmap.md` under what
+comes after 1.0.
 Last revised: 2026-07-24
 
 The full intended command surface. This is the plan, not a manual; anything here can change before
@@ -16,15 +17,15 @@ Available on every command, declared once on the root.
 
 | Flag | Default | Meaning |
 |---|---|---|
-| `-o, --output` | `table` | `table`, `json`, `csv`; `markdown` is planned |
+| `-o, --output` | `table` | `table`, `json`, `csv`, `markdown` |
 | `--export <path>` | none | Also write the result to a file |
 | `--export-format` | from extension | Override the export format |
 | `-q, --quiet` | false | Suppress all non-error output |
 | `-v, --verbose` | false | Debug-level logging to stderr |
 | `--no-color` | auto | Disable colour; also honours `NO_COLOR` |
 | `--config <path>` | OS config dir | Use a specific config file |
-| `--dry-run` | varies | Show what would happen, change nothing |
-| `-y, --yes` | false | Answer all confirmations affirmatively |
+| `--dry-run` | varies | Show what would happen, change nothing *(planned)* |
+| `-y, --yes` | false | Answer all confirmations affirmatively *(planned)* |
 | `-h, --help` | none | Help for the current command |
 | `--version` | none | Version, commit, build date, Go version |
 
