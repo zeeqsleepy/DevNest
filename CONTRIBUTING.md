@@ -96,6 +96,6 @@ the code, and remember the person on the other end is doing this voluntarily.
 
 ## License
 
-Contributions are licensed under the project's licence: Apache License 2.0 with the Commons Clause.
+Contributions are licensed under the project's licence: MIT.
 By opening a pull request you confirm you have the right to contribute the code and agree to it
 being released under those terms. There is no CLA.

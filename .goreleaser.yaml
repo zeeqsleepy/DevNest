@@ -50,10 +50,9 @@ archives:
       - LICENSE
       - CHANGELOG.md
 
-# Linux packages. The distribution repositories themselves are not a channel
-# DevNest can use, because they require an OSI-approved licence and the Commons
-# Clause means this one is not; a .deb and a .rpm on the release page have no
-# such requirement.
+# Linux packages, published with the release. Getting into the distribution
+# repositories themselves is a separate process with its own maintainers and
+# review; a .deb and a .rpm on the release page work today.
 nfpms:
   - id: devnest
     ids: [devnest]
@@ -65,7 +64,7 @@ nfpms:
       Single-binary developer toolkit: organise files, find duplicates by
       content, probe hosts, inspect TLS certificates, generate and judge
       passwords, analyse logs, inspect JSON and YAML.
-    license: Apache-2.0 with Commons Clause
+    license: MIT
     formats: [deb, rpm]
     bindir: /usr/bin
     # No version in the file name, so that the download links in
@@ -111,13 +110,13 @@ changelog:
       - '^test:'
       - '^chore:'
 
-# The Homebrew tap is self-hosted for the same licence reason as the
-# distribution repositories: Homebrew core requires an OSI-approved licence.
+# The Homebrew cask, published to a tap rather than to core: core wants a
+# package to be notable first (stars, forks, watchers, and thirty days of
+# maintenance) and DevNest is not there yet.
 #
-# Publishing is off until the tap repository exists and a token for it is in
-# the release secrets. The formula is still generated and uploaded with the
-# release, so the tap can be started by hand from it. See
-# docs/release-process.md for the two steps that turn this on.
+# Uploading is off until a token with write access to the tap is in the release
+# secrets. The cask is generated and attached to the release either way, so it
+# can be copied across by hand. See docs/release-process.md.
 homebrew_casks:
   - name: devnest
     ids: [devnest]
@@ -145,7 +144,7 @@ winget:
   - name: DevNest
     publisher: zeeqsleepy
     short_description: Single-binary developer toolkit for files, networks, logs, and secrets
-    license: Apache-2.0 with Commons Clause
+    license: MIT
     homepage: https://github.com/zeeqsleepy/DevNest
     publisher_url: https://github.com/zeeqsleepy
     package_identifier: zeeqsleepy.DevNest

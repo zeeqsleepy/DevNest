@@ -48,8 +48,7 @@ is for. The binary needs no installer, no elevation, and no runtime.
 
 ### Homebrew
 
-DevNest cannot go into Homebrew core, which requires an OSI-approved licence that the Commons
-Clause rules out, so it lives in a self-hosted tap:
+Homebrew core has a notability bar DevNest has not cleared yet, so it lives in a tap for now:
 
 ```bash
 brew tap zeeqsleepy/devnest

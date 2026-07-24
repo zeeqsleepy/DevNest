@@ -1,7 +1,7 @@
 # Folder Structure
 
 Status: current as of Phase 10
-Last revised: 2026-07-24
+Last revised: 2026-07-25
 
 Every directory in this repository has a stated purpose. If a file does not clearly belong in one
 of them, that is a signal the file is doing something the project has not decided about yet.
@@ -273,7 +273,7 @@ disabled when it goes red.
 | `SECURITY.md` | Supported versions and how to report a vulnerability privately |
 | `CODE_OF_CONDUCT.md` | Behavioural expectations for project spaces |
 | `CONTRIBUTING.md` | How to get set up and get a change merged |
-| `LICENSE` | Apache 2.0 with the Commons Clause: everything Apache grants except the right to sell |
+| `LICENSE` | MIT |
 | `Makefile` | The canonical task list: build, test, lint, benchmark, release |
 | `.gitignore` | Build output, local config, editor and OS noise |
 | `.editorconfig` | Indentation and line endings, so cross-platform contributors stop fighting |

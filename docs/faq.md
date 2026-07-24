@@ -1,7 +1,7 @@
 # FAQ
 
 Status: current as of Phase 10
-Last revised: 2026-07-24
+Last revised: 2026-07-25
 
 ## About the project
 
@@ -41,19 +41,16 @@ never get made. Linux and macOS are fully supported and covered in CI equally.
 
 **Is it open source?**
 
-Source-available, not open source, and the distinction is worth being straight about. DevNest is
-under the Apache License 2.0 with the Commons Clause: Apache 2.0 in full, patent grant included,
-with one right removed. That right is selling the software, meaning providing DevNest to others for
-a fee as a product or service whose value comes substantially from what DevNest does. Repackaging
-it and charging for it, hosting it as a paid service, and charging for support of it are all out.
+Yes. MIT, which is about as permissive as a licence gets: keep the copyright notice and do what you
+like, including selling it.
 
-Everything else is permitted, including the case people usually worry about: using DevNest at work,
-in a company that makes money, in a paid product's build pipeline. It is the tool being sold that
-is restricted, not the work you do with it.
+It was not always. Releases up to and including 0.1.0 went out under the Apache License 2.0 with
+the Commons Clause, which withheld the right to sell and therefore was not open source under the
+OSI definition. That restriction bought nothing: it kept DevNest out of Homebrew core and the Linux
+distribution repositories, and out of reach of anyone who wanted to contribute to an open source
+project, in exchange for protecting a commercial plan that does not exist.
 
-That single restriction is what stops it being open source under the OSI definition, which does not
-allow a licence to restrict a field of use. Calling it open source anyway would be a lie that costs
-nothing to avoid. See `LICENSE`.
+A copy taken under the old terms keeps them. Everything from here is MIT. See `LICENSE`.
 
 ## Using it
 

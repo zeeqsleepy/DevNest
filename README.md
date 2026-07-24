@@ -191,16 +191,12 @@ open a public issue.
 
 ## License
 
-[Apache License 2.0 with the Commons Clause](LICENSE).
+[MIT](LICENSE).
 
-Apache 2.0 in full, including the patent grant, with exactly one right removed: the right to
-**Sell** the software. Selling means providing DevNest to others, for a fee, as a product or
-service whose value comes substantially from what DevNest does. Repackaging it and charging for it
-is out. So is hosting it as a paid service, and so is charging for support of it.
+Use it, change it, redistribute it, sell it, put it in a paid product. Keep the copyright notice
+and there are no other conditions.
 
-Everything else is yours. Use it at home, use it at work, use it inside a company that makes money,
-put it in your CI, fork it, change it, redistribute it, build a paid product that uses DevNest as
-a tool in your own workflow. Only selling DevNest itself is withheld.
-
-This makes DevNest source-available rather than open source in the OSI sense, because a licence
-that restricts a field of use cannot honestly be called open source.
+Releases up to and including 0.1.0 went out under the Apache License 2.0 with the Commons Clause,
+which withheld the right to sell. That restriction bought nothing and cost the project Homebrew
+core, the Linux distribution repositories, and anyone who will only contribute to something open
+source. A copy taken under the old terms keeps them; everything from here is MIT.

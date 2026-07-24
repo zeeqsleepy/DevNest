@@ -1,7 +1,7 @@
 # Contributing Guide
 
 Status: current as of Phase 10
-Last revised: 2026-07-24
+Last revised: 2026-07-25
 
 `development-guide.md` covers setting up and doing the work. This document covers getting a change
 accepted.
@@ -152,6 +152,5 @@ voluntarily.
 
 ## Licensing
 
-Contributions are licensed under the project's licence: Apache License 2.0 with the Commons Clause,
-which is Apache 2.0 in full minus the right to sell the software. By opening a pull request you
-confirm you have the right to contribute the code and agree to that licence. There is no CLA.
+Contributions are licensed under the project's licence: MIT. By opening a pull request you confirm
+you have the right to contribute the code and agree to that licence. There is no CLA.

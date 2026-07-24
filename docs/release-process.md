@@ -153,7 +153,10 @@ failure there means deleting the release, which costs nothing before anybody has
 - `go install` works directly from the tag with no extra step.
 
 **The Homebrew tap** is `zeeqsleepy/homebrew-devnest`, created with 0.1.0 and updated by hand for
-now:
+now. It exists because Homebrew core requires a package to be notable — thirty stars, thirty forks,
+or seventy-five watchers, and thirty days of maintenance — and DevNest has none of that yet. The
+licence is no longer the obstacle it was: MIT qualifies, so core and the Linux distribution
+repositories are both open once the bar is cleared.
 
 ```bash
 brew tap zeeqsleepy/devnest
@@ -162,9 +165,7 @@ brew install --cask devnest
 
 To have each release update it automatically, add a token with write access to that repository as
 the `HOMEBREW_TAP_TOKEN` secret and set `skip_upload: false` under `homebrew_casks`. Until then,
-copy the `devnest.rb` attached to the release into `Casks/` in the tap. The tap is self-hosted rather than in Homebrew core for the same reason the
-Linux distribution repositories are out: both require an OSI-approved licence, and the Commons
-Clause means DevNest's is not one.
+copy the `devnest.rb` attached to the release into `Casks/` in the tap.
 
 **Turning on winget:** fork `microsoft/winget-pkgs`, add a token for it as `WINGET_TOKEN`, and set
 `skip_upload: false` under `winget`. Each release then opens a pull request against the fork,

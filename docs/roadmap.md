@@ -283,10 +283,7 @@ Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
 - `core/config`, which was not on this list and should have been: the documentation had told
   people to run `devnest config` since Phase 0, and the pass over the examples below is what
   found it. *(done)*
-- Packaging: winget, a self-hosted Homebrew tap, deb and rpm from the release page, tarballs.
-  Homebrew core and the Linux distribution repositories require an OSI-approved licence, and the
-  Commons Clause means DevNest's is not one. The channels above have no such requirement, and
-  building binaries from source is unrestricted either way. *(done: `.goreleaser.yaml` and the
+- Packaging: winget, a Homebrew tap, deb and rpm from the release page, tarballs. *(done: `.goreleaser.yaml` and the
   release workflow build the archives, the packages, the checksums, the winget manifests, and the
   Homebrew cask on a tag, then download what was published and run it on all three platforms. The
   two submission channels stay switched off until their repositories exist; `release-process.md`
