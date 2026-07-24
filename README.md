@@ -11,10 +11,12 @@ collection of installed utilities, and a browser tab for the things that are inc
 DevNest collects it into one executable with one consistent interface that behaves identically on
 Windows, Linux, and macOS.
 
-> **Status: Phase 9, repository and secret scanning.** Every command group except `doctor`,
-> `export`, and `init` works end to end: `file`, `network`, `security`, `log`, `env`, `scan`,
-> `encode`, `decode`, `json`, `yaml`, `port`, `clean`, `git`, and `secret`. See
-> [docs/roadmap.md](docs/roadmap.md).
+> **Status: 0.1.0, the first release.** Every command group works end to end on Windows, Linux, and
+> macOS: `file`, `network`, `security`, `log`, `env`, `scan`, `encode`, `decode`, `json`, `yaml`,
+> `port`, `clean`, `git`, `secret`, `config`, `doctor`, `export`, and `completion`.
+>
+> Pre-1.0, so command names, flag names, JSON field names, and exit codes can still change. The
+> compatibility promise starts at 1.0. See [docs/roadmap.md](docs/roadmap.md).
 
 ## What works today
 
@@ -86,16 +88,23 @@ match. They drop straight into cron or CI.
 A password given to `password-check` is never stored, never logged, and never appears in the
 output. The security module has no logger at all, which is the surest way to keep it that way.
 
+## Installing
+
+Download the archive for your platform from the
+[releases page](https://github.com/zeeqsleepy/DevNest/releases), or on Linux take the `.deb` or the
+`.rpm`. Extract, put the binary on PATH, done. Checksum verification and shell completion setup are
+in [docs/installation.md](docs/installation.md).
+
 ## What is still to come
 
 | | |
 |---|---|
-| `devnest doctor` | Self-check: configuration, permissions, rule set |
-| `devnest export` | Write any command's result to a file, and multi-command reports |
-| `devnest completion` | Shell completion for PowerShell, bash, zsh, fish |
-| Packaging | winget, a Homebrew tap, deb and rpm, tarballs |
+| winget, Homebrew | The manifests are generated with every release; submitting them is the missing step |
+| `devnest init` | Project scaffolding from templates, deliberately deferred past 1.0 |
+| 1.0 | The compatibility promise, once the surface has been used enough to freeze it |
 
-Full surface in [docs/commands.md](docs/commands.md).
+Full surface in [docs/commands.md](docs/commands.md); the plan in
+[docs/roadmap.md](docs/roadmap.md).
 
 ## Design commitments
 

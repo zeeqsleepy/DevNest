@@ -1,7 +1,7 @@
 # Installation
 
-Status: describes the intended installation methods; no release exists yet, so building
-from source is the only one that works today
+Status: current as of 0.1.0. The archives, the `.deb`, the `.rpm`, and building from source all
+work today; winget and Homebrew are generated with each release but not submitted yet
 Last revised: 2026-07-25
 
 DevNest is a single executable with no runtime dependency. Every method below results in the same

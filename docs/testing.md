@@ -1,7 +1,7 @@
 # Testing Strategy
 
 Status: current as of Phase 10
-Last revised: 2026-07-24
+Last revised: 2026-07-25
 
 Tests exist so that changing this codebase in a year is not frightening. That goal drives every
 decision below. In particular, tests must be fast enough to run constantly and reliable enough
@@ -117,6 +117,12 @@ Verifies the things only a real process can verify:
 - Signal handling: send an interrupt mid-run, expect exit 5 and a clean unwind.
 - Destructive commands do nothing without `--apply`: asserted by checking the tree afterwards,
   not by reading the output.
+- **Every `devnest` line in the documentation runs.** `tests/examples_test.go` harvests them from
+  `docs/` and `README.md` and runs each one with `--help` appended, which resolves the command path
+  and parses every flag without executing anything. That covers a destructive example and one that
+  would open a socket on the same terms as the rest. It found nineteen broken examples the day it
+  was written, including a command group the documentation had described since Phase 0 and which
+  did not exist.
 
 **Cost.** Slow, so kept few and reserved for contracts rather than behaviour. Behaviour is a unit
 test's job.
@@ -142,10 +148,15 @@ comparison.
 to mean anything.
 
 **What.** The operations whose performance targets are stated in `performance.md`: cold startup,
-a scan of a 10,000-file tree, hashing a 1 GB file, socket enumeration, secret scanning.
+scanning and cleaning a 10,000 file tree, credential scanning, reading a 200,000 line log,
+reprinting a 10 MB JSON document, and hashing.
 
-**Baselines.** Committed alongside the benchmark code, annotated with the hardware they were
-measured on. A comparison script reports drift.
+One of them measures nothing of DevNest's: `BenchmarkTreeReadBaseline` walks and reads the same
+tree with the standard library alone. A per-file cost looks like a defect until that number shows
+the same cost with DevNest out of the picture.
+
+**Baselines.** `benchmarks/baseline.txt`, annotated with the hardware and the exact command that
+produced it, and regenerated wholesale rather than edited.
 
 **In CI.** Benchmarks run on a schedule, not on every push: shared runners are too noisy for the
 numbers to be trustworthy per-commit. A regression beyond the threshold in `performance.md` opens

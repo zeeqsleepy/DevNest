@@ -1,7 +1,7 @@
 # Security
 
-Status: every section is implemented as of Phase 9
-Last revised: 2026-07-24
+Status: every section is implemented as of 0.1.0
+Last revised: 2026-07-25
 
 DevNest deletes files, terminates processes, reads credentials, and makes network requests. Each
 of those is a way to cause real damage. This document states how those capabilities are
@@ -71,6 +71,21 @@ the resolved one is the classic time-of-check/time-of-use hole.
 **Containment.** After resolution, every target must be under the operation root. A path that
 escapes is rejected with `PERMISSION_DENIED`, not silently skipped, because silence hides an
 attempted traversal.
+
+**Files DevNest writes.** Three commands write outside a directory the user named: `--export`
+writes a report, `config set` and `config init` write the configuration file. All three go through
+one atomic write in `platform/fs`, which renders beside the target and renames over it, so an
+interrupted write leaves the previous file or the new one and never a truncated file that still
+looks valid. The temporary file is created with the owner-only permissions `os.CreateTemp` gives it
+and the rename carries them over, which matters most for the configuration file.
+
+Overwriting an existing export is allowed and warned about in the result, so the warning survives
+every output format rather than only the terminal. `config init` refuses to overwrite at all: it is
+the one file on the machine holding decisions somebody made by hand.
+
+**Reports meant to be shared.** `devnest doctor` exists to be pasted into a public issue, so it
+shortens paths under the home directory to `~` and does not report the hostname at all. Neither
+helps anyone reading a stack of bug reports, and both identify whoever filed one.
 
 **Symlinks.** Not followed by default. When `--follow-symlinks` is passed, the walk records each
 resolved directory path and refuses to enter one twice, so a link pointing at its own ancestor

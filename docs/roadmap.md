@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: phases 0 through 9 complete; phase 10 complete except the first release itself
+Status: phases 0 through 10 complete; 0.1.0 released 2026-07-25
 Last revised: 2026-07-25
 
 Where the project is going and roughly in what order. Phases are ordered by dependency, not by
@@ -274,7 +274,7 @@ Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
 - **Fields are joined with 0x1F, not a null byte.** An argument vector is null-terminated, so no
   argument may contain one; a tab or a pipe appears in commit subjects.
 
-## Phase 10: Polish and 1.0
+## Phase 10: Polish and the first release *(complete)*
 
 - Shell completion for PowerShell, bash, zsh, fish. *(done)*
 - `core/doctor`. *(done)*
@@ -297,6 +297,31 @@ Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
 - A full benchmark run against `performance.md`, with baselines committed. *(done: every target
   has a benchmark, the numbers are in `performance.md`, and `benchmarks/baseline.txt` is the
   committed baseline.)*
+
+**Done:** 0.1.0 was released on 2026-07-25 from a tag, through the pipeline in
+`.goreleaser.yaml`: six static binaries, archives, `.deb` and `.rpm`, checksums, and the generated
+winget and Homebrew manifests. The workflow verifies the tagged commit on all three platforms
+before publishing, then downloads what it published and runs the end-to-end suite against it.
+
+Decisions worth carrying forward, recorded in `modules.md`, `security.md`, and `performance.md`:
+
+- **A completion script is generated from the command tree and baked in**, rather than resolved by
+  calling the binary on every keystroke. Completion stays instant and works when the binary is
+  busy; the cost is that a script goes stale on upgrade, which its own header says.
+- **`doctor` returns no errors.** A broken installation is the result it exists to produce, and the
+  CLI turns a failed check into an exit code after the report is on screen. It is also the one
+  command that starts when the configuration file will not load.
+- **The markdown renderer is generated from the JSON**, not from a view written per command, which
+  is what stops a report and a terminal run from describing one result two ways. The field-name
+  conventions in `export-system.md` are what make that possible.
+- **Configuration edits rewrite one line.** The file is hand-written and hand-commented; a value
+  the schema rejects is refused before anything is written.
+- **The documentation pass started with a test, not a reading.** Every documented `devnest` line
+  runs against the real binary. It found nineteen broken examples, including a whole command group
+  that had been documented since Phase 0 and never built.
+- **Benchmarking found one defect and one non-defect.** `secret scan` allocated a buffer per file,
+  579 MB over ten thousand of them; and the four seconds those commands take turned out to be the
+  operating system opening files, proved by a standard-library baseline that is slower still.
 
 **1.0 means the compatibility promise starts.** Command names, flag names, JSON field names, and
 exit codes are frozen for the major version. It is not declared until the surface has been used

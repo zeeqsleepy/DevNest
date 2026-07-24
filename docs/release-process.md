@@ -1,6 +1,6 @@
 # Release Process
 
-Status: the pipeline is implemented as of Phase 10 and runs on a tag; no release has been made yet
+Status: implemented and used. 0.1.0 was released with this pipeline on 2026-07-25
 Last revised: 2026-07-25
 
 How a version gets from a commit on the main branch to a binary someone downloads.

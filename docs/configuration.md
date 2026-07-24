@@ -1,7 +1,7 @@
 # Configuration
 
 Status: implemented, including the `devnest config` commands
-Last revised: 2026-07-24
+Last revised: 2026-07-25
 
 DevNest works fully with no configuration at all. That is the primary design constraint here: a
 tool that needs setup before first use has already lost most of its potential users. Configuration
@@ -116,7 +116,7 @@ configuration disables symbols with no way to ask for them once.
 The `[network]` section is named for the whole layer rather than for HTTP (it was `[http]` in
 Phase 1) because its timeout bounds a DNS lookup and a TLS handshake as well as a request. A key
 called `http.timeout_ms` governing how long a name resolution may take would be a small lie in a
-file people hand-edit. Nothing has been released, so the rename costs nobody anything; it is
+file people hand-edit. The rename happened before 0.1.0, so it cost nobody anything; it is
 recorded in the changelog.
 
 ```toml
