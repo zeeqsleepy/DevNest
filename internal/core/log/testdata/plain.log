@@ -1,0 +1,8 @@
+Build started at 09:00
+Compiling module one
+Compiling module two
+
+Running unit tests
+All tests passed
+Artifacts written to dist/
+Build finished

@@ -1,0 +1,62 @@
+# Build output
+#
+# The binary patterns are anchored to the repository root with a leading
+# slash. Without it, "devnest" also matches the cmd/devnest directory and
+# quietly excludes the entrypoint from every commit.
+/dist/
+/build/out/
+/devnest
+/devnest.exe
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Test and coverage output
+*.test
+*.out
+/reports/*
+!/reports/.gitkeep
+coverage.html
+
+# Profiling output
+*.prof
+*.pprof
+cpu.out
+mem.out
+trace.out
+
+# Local configuration and scratch files
+.devnest.local.toml
+/tmp/
+/scratch/
+
+# Go workspace files: local to a developer, never committed
+go.work
+go.work.sum
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.\#*
+\#*\#
+
+# Operating system noise
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Generated fixtures: created by scripts, not committed
+/fixtures/generated/
+
+# Dependency directories, if vendoring is ever used
+/vendor/

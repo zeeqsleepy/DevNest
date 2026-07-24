@@ -1,0 +1,75 @@
+# DevNest configuration.
+#
+# Every key below is optional. The value shown is the compiled default, so a
+# file with everything commented out behaves exactly like no file at all.
+#
+# Location:
+#   Windows   %APPDATA%\devnest\config.toml
+#   Linux     ~/.config/devnest/config.toml
+#   macOS     ~/Library/Application Support/devnest/config.toml
+#
+# Anything set here can be overridden by an environment variable, and anything
+# set in the environment can be overridden by a command-line flag. Run
+# "devnest config" to see the resolved values.
+#
+# Environment variables mirror this structure: [scan] max_depth becomes
+# DEVNEST_SCAN_MAX_DEPTH, and list values are comma-separated.
+#
+# Supported syntax is a subset of TOML: comments, single-level sections, and
+# values that are a string, integer, float, boolean, or single-line array.
+# Nested tables, dotted keys, and multi-line strings are not supported.
+
+[general]
+# Output format. Currently "table" or "json"; csv and markdown arrive with the
+# first command that produces tabular data.
+output = "table"
+
+# Colour handling: "auto" follows the terminal and honours NO_COLOR,
+# "always" forces it on, "never" turns it off.
+color = "auto"
+
+# Log verbosity on stderr: "error", "warn", "info", or "debug".
+# --quiet sets error; --verbose sets debug.
+verbosity = "warn"
+
+# Prompt before destructive operations. Command-line safety guards for root,
+# home, and system directories are not affected by this and cannot be disabled
+# from a configuration file.
+confirm = true
+
+[scan]
+follow_symlinks = false
+respect_ignore  = true
+max_depth       = 0                        # 0 means unlimited
+exclude         = [".git", "node_modules"]
+
+[clean]
+patterns        = ["node_modules", "dist", "build", "target", "__pycache__"]
+protect         = []                       # never removed, whatever the patterns match
+require_confirm = true
+
+[secret]
+entropy_threshold = 4.5                    # 0 to 8; raise it to reduce false positives
+exclude_paths     = ["testdata/", "fixtures/", "*.lock"]
+custom_rules      = []
+
+# Defaults for generated passwords. Nothing secret is stored here and nothing
+# ever will be: these describe the shape of a password, not a password.
+[security]
+password_length            = 20
+password_symbols           = true   # --symbols and --no-symbols override this
+password_exclude_ambiguous = false  # drop characters like O and 0 that are easy to misread
+
+# Every command that opens a socket reads this section. The timeout bounds a
+# DNS lookup and a TLS handshake as well as an HTTP request, which is why the
+# section is named for the network rather than for HTTP.
+[network]
+timeout_ms      = 30000
+follow_redirect = true
+max_redirects   = 10
+attempts        = 3      # default for "latency" and "ping"
+interval_ms     = 200    # pause between attempts
+
+[export]
+directory       = "reports"
+timestamp_files = true

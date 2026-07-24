@@ -1,0 +1,22 @@
+# Line endings, settled once so contributors on different platforms stop
+# producing whitespace-only diffs.
+#
+# .editorconfig asks for LF; without this, Git on Windows would check files
+# out as CRLF and the two would quietly disagree. Normalising in the
+# repository means the stored form is always LF, whatever the checkout looks
+# like locally.
+* text=auto eol=lf
+
+# PowerShell scripts are more predictable with CRLF on the platform that runs
+# them, matching the rule in .editorconfig.
+*.ps1 text eol=crlf
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binary, never touched.
+*.png binary
+*.jpg binary
+*.ico binary
+*.gz  binary
+*.zip binary
+*.exe binary

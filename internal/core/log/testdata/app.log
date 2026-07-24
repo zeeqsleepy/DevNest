@@ -1,0 +1,24 @@
+2026-07-24T09:00:00Z INFO  starting devnest-api version 1.4.2
+2026-07-24T09:00:00Z INFO  listening on 0.0.0.0:8080
+2026-07-24T09:00:03Z DEBUG cache warm-up finished in 312ms
+2026-07-24T09:01:11Z WARN  deprecated endpoint /api/v1/users called by client 4821
+2026-07-24T09:01:40Z ERROR database connection failed: dial tcp 10.0.0.14:5432: connect: connection refused
+2026-07-24T09:01:45Z ERROR database connection failed: dial tcp 10.0.0.14:5432: connect: connection refused
+2026-07-24T09:01:52Z ERROR database connection failed: dial tcp 10.0.0.14:5432: connect: connection refused
+2026-07-24T09:02:04Z INFO  reconnected to database after 3 attempts
+2026-07-24T09:03:19Z WARN  slow query took 2140ms: SELECT * FROM reports
+2026-07-24T09:04:02Z ERROR user 4821 not found
+2026-07-24T09:04:37Z ERROR user 9930 not found
+2026-07-24T09:05:58Z ERROR user 1077 not found
+2026-07-24T09:06:31Z ERROR request timeout after 30s calling billing-service
+2026-07-24T09:06:44Z ERROR request timeout after 30s calling billing-service
+2026-07-24T09:07:02Z INFO  billing-service recovered
+2026-07-24T09:08:15Z WARN  disk usage at 81 percent on /var/log
+2026-07-24T09:09:00Z FATAL out of memory: cannot allocate 512 MB for report buffer
+2026-07-24T09:09:01Z INFO  restarting worker pool
+2026-07-24T09:10:22Z ERROR permission denied writing /var/lib/devnest/cache
+2026-07-24T09:11:05Z INFO  request completed in 41ms
+2026-07-24T09:12:47Z ERROR panic: runtime error: invalid memory address or nil pointer dereference
+2026-07-24T09:12:48Z INFO  worker pool restarted
+2026-07-24T09:13:30Z INFO  shutdown signal received
+2026-07-24T09:13:31Z INFO  stopped cleanly

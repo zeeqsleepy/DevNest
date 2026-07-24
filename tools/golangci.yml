@@ -1,0 +1,97 @@
+# Linter configuration for DevNest.
+#
+# Kept in tools/ so that development tooling stays out of the project root and
+# out of the main module graph. The Makefile and CI both point at this file.
+#
+# Schema version 2, which golangci-lint has required since v2.0. CI pins the
+# linter version rather than tracking latest: a linter that gains a rule
+# overnight turns an unrelated pull request red.
+
+version: "2"
+
+run:
+  tests: true
+
+linters:
+  # errcheck, govet, ineffassign, staticcheck, and unused are the default set
+  # and are not repeated here.
+  enable:
+    - bodyclose
+    - errorlint # catches %v where %w was meant, which silently breaks errors.Is
+    - gocritic
+    - misspell
+    - revive
+
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: false
+
+    misspell:
+      locale: UK
+      # Prose in this project is written in British English. The words below
+      # are not prose: NO_COLOR is a standard environment variable, "organize"
+      # and "analyze" are command names frozen by the compatibility contract,
+      # "unauthorized" is a string this tool matches in other programs' logs,
+      # and Go's own vocabulary is American throughout. Flagging any of them
+      # is the linter correcting an interface it does not get to choose.
+      ignore-rules:
+        - color
+        - colors
+        - colored
+        - coloring
+        - organize
+        - organized
+        - analyze
+        - analyzer
+        - summarize
+        - unauthorized
+        - artifact
+        - artifacts
+
+    revive:
+      rules:
+        - name: exported
+        - name: package-comments
+        - name: indent-error-flow
+        - name: error-strings
+        - name: error-naming
+        - name: context-as-argument
+
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      # Table-driven tests read better with the fixture data inline, and a test
+      # helper that fails the test does not need its own error return.
+      - path: _test\.go
+        linters:
+          - gocritic
+
+      # The field table asserts the type of each decoded value. The kind
+      # recorded beside the field is what guarantees the assertion, and the
+      # decoder checks it before the setter ever runs. Twenty-four checked
+      # assertions here would restate that guarantee once per line.
+      - path: internal/config/fields\.go
+        linters:
+          - errcheck
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+formatters:
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

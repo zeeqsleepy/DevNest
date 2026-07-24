@@ -1,0 +1,26 @@
+version: 2
+
+# Two ecosystems, both on a weekly cadence. Daily would mean a pull request for
+# something nobody is waiting on, which is how people learn to ignore them.
+#
+# A Go module bump still has to pass the dependency job in ci.yml, which pins
+# the module graph to an allow list by path. A version bump passes it; a new
+# module arriving as a transitive dependency does not, which is the point.
+updates:
+  - package-ecosystem: gomod
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: build
+
+  # The pinned action versions in ci.yml go stale silently otherwise, and a
+  # deprecated runner action is found at the worst possible moment.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: ci

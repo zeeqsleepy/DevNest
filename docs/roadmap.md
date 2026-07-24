@@ -1,0 +1,292 @@
+# Roadmap
+
+Status: phases 0 through 7 complete
+Last revised: 2026-07-24
+
+Where the project is going and roughly in what order. Phases are ordered by dependency, not by
+date: a phase ships when it is done, and the ordering exists so that each phase has a working
+foundation under it.
+
+## Phase 0: Foundation *(complete)*
+
+Documentation, architecture, folder structure, and rules. No code.
+
+The point of doing this first is that the structural decisions are the ones that are expensive to
+change later. Deciding the layering after four modules exist means rewriting four modules.
+
+**Deliverables:** the documents in `docs/`, the directory layout, the root files, and the rules in
+`rules.md`.
+
+**Done when:** a contributor can read `architecture.md` and `modules.md` and know exactly where a
+new feature goes without asking.
+
+## Phase 1: Skeleton *(complete)*
+
+The application runs, does nothing useful, and everything structural is in place.
+
+- `cmd/devnest/main.go`: signal handling, panic recovery, exit code mapping.
+- `internal/cli`: command tree, global flags, help text, `help` and `version`.
+- `internal/errors`: codes, wrapping, classification, exit mapping.
+- `internal/logging`: levels, both handlers, stderr discipline.
+- `internal/output`: the envelope, the table and JSON renderers, terminal detection.
+- `internal/config`: four-layer precedence, TOML decoding, validation.
+- `internal/version`: link-time metadata.
+- CI on all three platforms, the import-boundary check, the coverage floor, and the linter.
+
+**Done:** `devnest version --output json` works, the exit code contract is tested in-process and
+end-to-end, and stdout carries no log output at any verbosity.
+
+Two items moved out of this phase:
+
+- **`internal/platform`** was not needed. Nothing in Phase 1 requires a platform abstraction that
+  the standard library does not already provide portably. It is created in Phase 2, alongside the
+  first module that needs socket enumeration and process inspection.
+- **The CSV and Markdown renderers** were deferred. Neither has a consumer until a command produces
+  tabular data, and a renderer written without one is a renderer written against a guess. They
+  arrive with `scan` in Phase 2.
+
+The first real command comes only after this. A skeleton built around a working command tends to
+inherit that command's assumptions.
+
+## Phase 2: File tools *(complete)*
+
+The file module, and the platform layer it needed.
+
+- `internal/platform/fs`: walking, stating, resolving, containment, moving, digests, and the
+  per-platform rules for path case, hidden files, and protected directories.
+- `core/file`: organise, duplicates, rename, filter, size, hash.
+- `internal/cli`: the `file` command group, the table renderer, size-with-units flags, and the
+  confirmation prompt.
+
+**Done:** all six operations ship with tests at three levels: fakes for the module, a real
+temporary directory for the platform layer, and the built binary end to end. `internal/core` is
+above the 80% floor and so is the project overall.
+
+Two things moved out of this phase:
+
+- **The CSV and Markdown renderers** are still deferred. The table renderer arrived because the
+  file commands produce rows and needed one; CSV and Markdown still have nobody asking. They land
+  with the first user who wants a file listing in a spreadsheet or a report in a ticket.
+- **`devnest hash` and `devnest scan size`**, as planned in Phase 0, are now `devnest file hash`
+  and `devnest file size`. Both belong beside the other file operations, and `commands.md` records
+  what remains for a separate `hash` command: verification and tree digests.
+
+## Phase 3: Network tools *(complete)*
+
+The networking module, and the platform layer it needed.
+
+- `internal/platform/net`: HTTP with a timing breakdown and a recorded redirect chain, DNS
+  resolution, TLS chain inspection, and TCP probing.
+- `core/network`: monitor, http, latency, ping, dns, ssl.
+- `internal/cli`: the `network` command group and duration flags.
+- Configuration: `[http]` renamed to `[network]`, gaining `attempts` and `interval_ms`.
+
+**Done:** all six commands ship with tests at three levels: fakes for the module, a loopback
+server for the platform layer, and the built binary end to end. `internal/core/network` is at 94%.
+No test makes an outbound connection.
+
+Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
+
+- **`ping` is a TCP probe, not ICMP**, because ICMP needs elevation and DevNest never asks for it.
+  Every result says which was used.
+- **A failure to reach something is a result, not an error**, which is what lets the exit code
+  mean "the site is down".
+- **`--insecure` is one flag plus a warning**, not two flags. The reasoning is in `security.md`.
+
+## Phase 4: Security tools *(complete)*
+
+The defensive security module, sharing the digest implementation already in the platform layer.
+
+- `core/security`: password generation, strength checking, hashing, checksum verification, and
+  Base64.
+- `platform/fs`: gained `DigestReader`, `DigestLength`, and `AlgorithmForLength`, so that hashing
+  a string and hashing a file are one implementation and a checksum can be recognised from its
+  length.
+- Configuration: a `[security]` section for password defaults.
+
+**Done:** all six commands ship with tests at three levels. `internal/core/security` is at 93%.
+
+Decisions worth carrying forward, recorded in `security.md` and `modules.md`:
+
+- **The module has no logger**, which is the surest way to guarantee a password never reaches one.
+- **Strength findings are fixed strings**, never assembled from the input, so a result can be
+  exported without leaking what was typed.
+- **A dictionary match caps the score** rather than only subtracting from it.
+- **Randomness is a parameter**, so the generator is testable and `math/rand` is unreachable.
+
+One redundancy was created knowingly: `devnest file hash` and `devnest security hash` overlap.
+They share an implementation, and differ in that the first takes several files while the second
+adds text and standard input. Whether both should exist is worth settling before 1.0.
+
+## Phase 5: Log tools *(complete)*
+
+Reading log files too large to open in an editor, and reporting what is in them.
+
+- `core/log`: analyse, HTTP access summary, error summary, status distribution, top endpoints,
+  keyword search, and line statistics.
+- `platform/fs`: gained `Open`, so a module can stream a file it could not hold.
+- `internal/output`: gained a CSV renderer, and with it the row view a command supplies when its
+  result is genuinely rows.
+
+**Done:** all seven commands ship with tests at three levels, plus benchmarks in `benchmarks/`
+against a generated 200,000 line access log. The figures are recorded in `performance.md`.
+
+Decisions worth carrying forward, recorded in `modules.md` and `performance.md`:
+
+- **One pass and one reused buffer**, so a four gigabyte log costs the same resident memory as a
+  four kilobyte one. Everything the module returns is a bounded aggregate.
+- **A malformed line is counted, not fatal.** Real log files carry rotation notices and entries
+  from other programs, and a summary of the rest is what the user came for.
+- **The three HTTP commands are projections of one collection pass**, which is why they can never
+  disagree about how many requests a file holds.
+- **Counters hold pointers**, which took the HTTP summary from 800,141 allocations per run to
+  1,273.
+- **CSV is opt-in per command.** A result that is a handful of named values has no honest CSV form,
+  and says so rather than inventing one.
+
+## Phase 6: Environment and project analysis *(complete)*
+
+Two modules and two new platform packages: what is installed on the machine, and what a project
+tree is made of.
+
+- `platform/proc`: running a program under a timeout, and locating one on PATH. The two operating
+  systems differ most here, and the differences (execute bit versus PATHEXT, name versus stem) live
+  in its build-tag files.
+- `platform/sys`: OS, architecture, shell, terminal, and the environment.
+- `core/env`: a machine summary, toolchain detection, PATH inspection with shadowed executables, a
+  resolve-everywhere lookup, and an environment listing with credentials masked.
+- `core/scan`: a structural summary, a file-type breakdown, a line count split into code, comment,
+  and blank, and a tree listing.
+- `internal/classify`: the file category and language rules, in their own leaf package below the
+  modules because `clean` and `secret` will need them too.
+
+**Done:** all nine commands ship with tests at three levels, `internal/core` at 92%. The category
+table did become a shared package, as planned, though as a new one rather than by moving
+`core/file`'s: the two answer different questions and merging them served neither.
+
+Decisions worth carrying forward, recorded in `modules.md` and `architecture.md`:
+
+- **A missing tool, or a mute one, is a result.** Only a request that cannot be carried out at all
+  is an error.
+- **Every toolchain probe is bounded and shell-free**, because a version flag that hangs would
+  otherwise hang the summary.
+- **Credentials are masked by variable name, in the result itself**, because a listing gets
+  attached to a ticket.
+- **The scan skips what the project ignores**, before descending, or a small Node project reports
+  four hundred thousand files.
+
+## Phase 7: Data and encoding *(complete)*
+
+Two modules that read what the user already has: encoded values, and structured documents.
+
+- `core/encoding`: hex, URL percent-encoding, and JWT decoding. Base64 was already shipped in
+  `core/security` in Phase 4 and was not duplicated.
+- `core/data`: validate, format, minify, query, and convert between JSON, YAML, and CSV.
+- `internal/cli`: the `encode`, `decode`, `json`, and `yaml` groups.
+
+**Done:** all thirteen commands ship with tests at three levels, `internal/core` at 92%. The size
+limit, the exit codes, and the shape of stdout are covered end to end, because those are what a
+script depends on.
+
+Decisions worth carrying forward, recorded in `modules.md` and `commands.md`:
+
+- **The query syntax is a path expression and nothing more**, which settles the open question in
+  `prd.md`: keys separated by dots, elements by `[n]`, awkward keys in `["quoted brackets"]`. No
+  filters, no wildcards, no functions. A query language is a product of its own, and a half-built
+  one is a worse `jq` that nobody has documented.
+- **Reprinting and re-encoding are different operations and are kept apart.** `format` and `minify`
+  work on the document's own bytes, so key order and number precision survive; `query` re-encodes
+  what it selects and says that its keys come back sorted.
+- **There is no `yaml format`**, because re-emitting YAML deletes every comment in the file.
+- **A nested value is reported, never stringified into a CSV cell.** A spreadsheet that looks
+  converted and is not gets found weeks later, in a report.
+- **This module holds documents in memory and says so**, with a 64 MiB limit that fails with a
+  sentence rather than an out-of-memory kill. The streaming module is `log`, and the error says so.
+
+**The first dependency arrived here**: `github.com/goccy/go-yaml`, MIT, no transitive dependencies.
+Hand-writing a YAML parser is not a reasonable use of anyone's time, and `modules.md` had said so
+since Phase 0. CI now pins the whole module graph to an allow list, so a second dependency is a
+decision rather than an accident.
+
+## Phase 8: System modules
+
+Where the cross-platform work gets real.
+
+- `core/port`: three separate socket enumeration implementations behind one surface.
+- `core/clean`: removal, which is a step beyond anything the file module does.
+
+`clean` ships only once every guard in `security.md` has a test asserting the refusal, not just
+the success path. The protected-path table and the enumerate-then-act pattern already exist in
+`platform/fs` and `core/file`, so it inherits most of its safety rather than reinventing it.
+
+## Phase 9: Repository and secret scanning
+
+- `core/git`: summary, stale branches, contributors, large objects.
+- `core/secret`: rule set, entropy scoring, redaction, history scanning.
+
+The history-scanning default question from `prd.md` gets decided here, informed by how slow it
+actually turns out to be.
+
+## Phase 10: Polish and 1.0
+
+- Shell completion for PowerShell, bash, zsh, fish.
+- `core/doctor`.
+- `devnest export` multi-command reports.
+- Packaging: winget, a self-hosted Homebrew tap, deb and rpm from the release page, tarballs.
+  Homebrew core and the Linux distribution repositories require an OSI-approved licence, and the
+  Commons Clause means DevNest's is not one. The channels above have no such requirement, and
+  building binaries from source is unrestricted either way.
+- Documentation pass across everything, with all examples tested.
+- A full benchmark run against `performance.md`, with baselines committed.
+
+**1.0 means the compatibility promise starts.** Command names, flag names, JSON field names, and
+exit codes are frozen for the major version. It is not declared until the surface has been used
+enough to be confident about it, because withdrawing a promise is much harder than delaying one.
+
+## After 1.0
+
+Not commitments. Directions, in rough order of how likely they are to be worth doing.
+
+**Scaffolding.** `devnest init` with templates from `templates/`. Deferred past 1.0 because doing
+it well means a template ecosystem, and doing it badly means another mediocre generator.
+
+**Project-local configuration.** Currently excluded on purpose; see `configuration.md`. If real
+usage shows a narrow set of keys that genuinely belong per-project, a `.devnest.toml` limited to
+those keys (never the safety-relevant ones) becomes reasonable.
+
+**Scan comparison.** Diff two scans to show growth over time. Useful for tracking a repository
+that keeps getting bigger and nobody knows why.
+
+**Git hotspot analysis.** Files by change frequency, as a proxy for where the risk concentrates.
+
+**Secret scanning baselines.** So an existing repository can adopt scanning without drowning in
+historical findings.
+
+**More toolchains in `env`.** A table entry each, so this is contribution-friendly and does not
+need a maintainer.
+
+**A `pkg/` surface.** If demand appears for using a module as a library. The domain layer is
+already shaped for it; what is missing is the API stability commitment, not the code.
+
+## Explicitly not planned
+
+Restated from `prd.md` because roadmap documents attract feature requests:
+
+- Package management, installation, or version switching.
+- A daemon, a watcher, or any long-running mode.
+- A TUI or interactive shell.
+- A build system.
+- Secret storage or a credential manager.
+- Telemetry, analytics, or update checking, in any form, including opt-in.
+- A plugin system in 1.x. If it is ever reconsidered, the mechanism is a subprocess exchanging
+  JSON over stdio, never code loaded into this process.
+
+## How this changes
+
+The roadmap is revised when a phase completes or when something learned during a phase changes
+what comes next. Revisions edit this document rather than appending to it, so it stays a statement
+of the current plan rather than a history of previous plans: that is what version control and
+`CHANGELOG.md` are for.
+
+Feature requests belong in issues, not here. Something lands on the roadmap once a maintainer has
+agreed it should exist.
