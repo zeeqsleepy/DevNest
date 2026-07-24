@@ -13,6 +13,7 @@ func NewRoot() *Command {
 		Usage:       "devnest <command> [arguments] [flags]",
 		Commands: []*Command{
 			newCleanCommand(),
+			newCompletionCommand(),
 			newDecodeCommand(),
 			newEncodeCommand(),
 			newEnvCommand(),

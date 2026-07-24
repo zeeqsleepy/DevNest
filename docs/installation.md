@@ -183,6 +183,9 @@ devnest completion fish > ~/.config/fish/completions/devnest.fish
 
 Restart the shell afterwards.
 
+Each script is generated from the command tree inside the binary that printed it, so it completes
+exactly the commands and flags that version has. Regenerate it after an upgrade.
+
 ## Verifying the installation
 
 ```

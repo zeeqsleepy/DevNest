@@ -10,6 +10,20 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: shell completion
+
+- `devnest completion powershell|bash|zsh|fish`: print a completion script to stdout, for you to
+  redirect wherever your shell keeps them. Nothing is installed and no file is written; the
+  instructions for each shell are in [docs/installation.md](docs/installation.md).
+
+Completion covers the command tree and the flags, and falls back to file names where a command
+takes a path. The tree is baked into the script rather than fetched by calling the binary back on
+every keystroke, so completion stays instant and keeps working when the binary is busy or under a
+different name. The trade is that a script is only as current as the version that printed it:
+regenerate it after an upgrade.
+
+`--output json` returns the same script as a field, which is what a packaging step wants.
+
 ### Added: credential scanning
 
 - `devnest secret scan [path]`: search a working tree for credential-shaped strings. Sixteen rules:

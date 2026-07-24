@@ -1248,3 +1248,65 @@ func TestSecretGroupHelp(t *testing.T) {
 		}
 	}
 }
+
+// A completion script is only useful if it can be redirected straight into a
+// profile, which means stdout carries the script and nothing else.
+func TestCompletionPrintsAScriptForEveryShell(t *testing.T) {
+	shells := map[string]string{
+		"bash":       "complete -F _devnest devnest",
+		"zsh":        "#compdef devnest",
+		"fish":       "complete -c devnest",
+		"powershell": "Register-ArgumentCompleter -Native -CommandName devnest",
+	}
+
+	for shell, want := range shells {
+		t.Run(shell, func(t *testing.T) {
+			got := runBinary(t, "completion", shell)
+
+			if got.exitCode != 0 {
+				t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+			}
+			if !strings.Contains(got.stdout, want) {
+				t.Errorf("the %s script does not contain %q:\n%s", shell, want, got.stdout)
+			}
+			if !strings.Contains(got.stdout, "secret") {
+				t.Errorf("the %s script does not know the command tree:\n%s", shell, got.stdout)
+			}
+			if strings.TrimSpace(got.stderr) != "" {
+				t.Errorf("stderr is not empty: %s", got.stderr)
+			}
+		})
+	}
+}
+
+// The JSON form exists for a packaging step, which wants the script as a value
+// rather than as the whole of stdout.
+func TestCompletionJSONCarriesTheScript(t *testing.T) {
+	got := runBinary(t, "completion", "bash", "--output", "json")
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+
+	var envelope struct {
+		Data struct {
+			Shell  string `json:"shell"`
+			Script string `json:"script"`
+		} `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(got.stdout), &envelope); err != nil {
+		t.Fatalf("stdout is not JSON: %v\n%s", err, got.stdout)
+	}
+	if envelope.Data.Shell != "bash" {
+		t.Errorf("shell = %q, want %q", envelope.Data.Shell, "bash")
+	}
+	if !strings.Contains(envelope.Data.Script, "complete -F _devnest devnest") {
+		t.Errorf("the script field does not hold the script:\n%s", envelope.Data.Script)
+	}
+}
+
+func TestCompletionRejectsAnUnknownShell(t *testing.T) {
+	got := runBinary(t, "completion", "tcsh")
+	if got.exitCode != 2 {
+		t.Errorf("exit code = %d, want 2\nstdout: %s\nstderr: %s", got.exitCode, got.stdout, got.stderr)
+	}
+}
