@@ -2,7 +2,7 @@
 
 Status: describes the intended installation methods; no release exists yet, so building
 from source is the only one that works today
-Last revised: 2026-07-24
+Last revised: 2026-07-25
 
 DevNest is a single executable with no runtime dependency. Every method below results in the same
 binary; pick whichever fits how you manage tools.
@@ -11,16 +11,17 @@ binary; pick whichever fits how you manage tools.
 
 ### winget
 
+*Not submitted yet.* The manifest is generated with every release and attached to it, and it is
+submitted to the winget repository once there is a release worth installing.
+
 ```powershell
-winget install DevNest.DevNest
+winget install zeeqsleepy.DevNest
 ```
 
 ### Scoop
 
-```powershell
-scoop bucket add extras
-scoop install devnest
-```
+*Not submitted yet*, for the same reason. Until then, the manual method below is the Windows
+install.
 
 ### Manual
 
@@ -47,14 +48,18 @@ is for. The binary needs no installer, no elevation, and no runtime.
 
 ### Homebrew
 
+*Not published yet.* DevNest cannot go into Homebrew core, which requires an OSI-approved licence
+that the Commons Clause rules out, so it will live in a self-hosted tap:
+
 ```bash
-brew install devnest
+brew tap zeeqsleepy/devnest
+brew install --cask devnest
 ```
 
 ### Manual
 
 ```bash
-curl -LO https://github.com/<owner>/devnest/releases/latest/download/devnest-darwin-arm64.tar.gz
+curl -LO https://github.com/zeeqsleepy/DevNest/releases/latest/download/devnest-darwin-arm64.tar.gz
 tar -xzf devnest-darwin-arm64.tar.gz
 sudo mv devnest /usr/local/bin/
 devnest version
@@ -75,27 +80,21 @@ Or open System Settings → Privacy & Security and allow it there after the firs
 ### Debian and Ubuntu
 
 ```bash
-curl -LO https://github.com/<owner>/devnest/releases/latest/download/devnest_amd64.deb
-sudo dpkg -i devnest_amd64.deb
+curl -LO https://github.com/zeeqsleepy/DevNest/releases/latest/download/devnest_linux_amd64.deb
+sudo dpkg -i devnest_linux_amd64.deb
 ```
 
 ### Fedora and RHEL
 
 ```bash
-curl -LO https://github.com/<owner>/devnest/releases/latest/download/devnest_x86_64.rpm
-sudo rpm -i devnest_x86_64.rpm
-```
-
-### Homebrew on Linux
-
-```bash
-brew install devnest
+curl -LO https://github.com/zeeqsleepy/DevNest/releases/latest/download/devnest_linux_amd64.rpm
+sudo rpm -i devnest_linux_amd64.rpm
 ```
 
 ### Manual
 
 ```bash
-curl -LO https://github.com/<owner>/devnest/releases/latest/download/devnest-linux-amd64.tar.gz
+curl -LO https://github.com/zeeqsleepy/DevNest/releases/latest/download/devnest-linux-amd64.tar.gz
 tar -xzf devnest-linux-amd64.tar.gz
 sudo mv devnest /usr/local/bin/
 devnest version
@@ -110,7 +109,7 @@ For a user-local install with no `sudo`, move it to `~/.local/bin` and make sure
 Requires Go 1.25 or newer.
 
 ```bash
-go install github.com/<owner>/devnest/cmd/devnest@latest
+go install github.com/devnest/devnest/cmd/devnest@latest
 ```
 
 The binary lands in `$(go env GOPATH)/bin`, which needs to be on PATH.
@@ -120,8 +119,8 @@ For a specific version, replace `@latest` with a tag: `@v1.2.3`.
 To build from a clone:
 
 ```bash
-git clone https://github.com/<owner>/devnest.git
-cd devnest
+git clone https://github.com/zeeqsleepy/DevNest.git
+cd DevNest
 make build
 ```
 
@@ -203,13 +202,13 @@ bug report.
 Whatever installed it, updates it:
 
 ```powershell
-winget upgrade DevNest.DevNest
+winget upgrade zeeqsleepy.DevNest
 scoop update devnest
 ```
 
 ```bash
 brew upgrade devnest
-go install github.com/<owner>/devnest/cmd/devnest@latest
+go install github.com/devnest/devnest/cmd/devnest@latest
 ```
 
 For a manual install, download the new archive and replace the binary.
@@ -221,7 +220,7 @@ for a new version is your package manager's job, or the releases page.
 ## Uninstalling
 
 ```powershell
-winget uninstall DevNest.DevNest
+winget uninstall zeeqsleepy.DevNest
 scoop uninstall devnest
 ```
 

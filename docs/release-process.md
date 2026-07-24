@@ -1,7 +1,7 @@
 # Release Process
 
-Status: draft; no release has been made yet
-Last revised: 2026-07-23
+Status: the pipeline is implemented as of Phase 10 and runs on a tag; no release has been made yet
+Last revised: 2026-07-25
 
 How a version gets from a commit on the main branch to a binary someone downloads.
 
@@ -78,13 +78,28 @@ anything.
 
 **7. Tag.** An annotated tag, `v1.2.3`, on the release commit.
 
-**8. CI builds and publishes.** Tag push triggers the release workflow.
+**8. CI builds and publishes.** Pushing an annotated tag triggers
+`.github/workflows/release.yml`, which verifies, builds, publishes, and then downloads what it
+published and runs it.
+
+Before tagging, the pipeline can be run end to end without publishing anything:
+
+```
+make release-check      # the configuration is valid
+make release-snapshot   # every archive, package, and manifest, built locally
+```
 
 ## Build
 
 Release binaries are built by CI from the tagged commit. Never from a maintainer's machine:
 a local build carries whatever that machine happened to have installed, and reproducibility is
 the entire point.
+
+The pipeline is [GoReleaser](https://goreleaser.com), configured in `.goreleaser.yaml`. It is a
+build tool fetched on demand, pinned to a version, and it never enters the module graph: the
+allow list in CI still covers every dependency DevNest actually links. What it replaced was
+roughly four hundred lines of shell for archives, `.deb` and `.rpm` construction, checksums, and
+manifest generation, none of which would have been better for being ours.
 
 **Targets:**
 
@@ -104,11 +119,18 @@ the entire point.
 - Version, commit hash, and build date injected at link time into `internal/version`.
 - Reproducible: the same tag built twice produces identical bytes.
 
-**Verification, before anything is published:**
+**Verification.** The workflow has three jobs, in order:
 
-- Each binary runs `--version` on its target platform and reports the expected version.
-- The end-to-end suite runs against the built binary, not against `go run`.
-- Binary size is checked against the target.
+1. **verify** runs the unit and end-to-end suites on Windows, Linux, and macOS against the tagged
+   commit. A tag can point at a commit CI never saw, and finding that out after the archives are
+   published is finding out too late.
+2. **release** builds every target and publishes.
+3. **smoke** downloads what was published on each of the three platforms, verifies the checksum
+   the way `installation.md` tells a user to, extracts the archive, runs `devnest version`, checks
+   that the version reported matches the tag, and runs the end-to-end suite against that binary.
+
+The third job runs after publishing because the artifacts have to exist to be downloaded. A
+failure there means deleting the release, which costs nothing before anybody has installed it.
 
 ## Publishing
 
@@ -118,12 +140,23 @@ the entire point.
 - `checksums.txt` with SHA-256 for every artifact.
 - Release notes generated from the changelog section for this version.
 
-**Package channels**, updated after the release artifacts are published and verified:
+**Package channels:**
 
-- winget manifest for Windows.
-- Homebrew formula for macOS and Linux.
-- `.deb` and `.rpm` packages.
+- `.deb` and `.rpm` for amd64 and arm64, built and published with the release.
+- The winget manifests and the Homebrew cask are generated and attached to the release, but not
+  submitted anywhere yet. Both publishers are switched off in `.goreleaser.yaml` because neither
+  target exists: turning them on is one field each, described below.
 - `go install` works directly from the tag with no extra step.
+
+**Turning on the Homebrew tap:** create `zeeqsleepy/homebrew-devnest`, add a token with write
+access to it as the `HOMEBREW_TAP_TOKEN` secret, and set `skip_upload: false` under
+`homebrew_casks`. The tap is self-hosted rather than in Homebrew core for the same reason the
+Linux distribution repositories are out: both require an OSI-approved licence, and the Commons
+Clause means DevNest's is not one.
+
+**Turning on winget:** fork `microsoft/winget-pkgs`, add a token for it as `WINGET_TOKEN`, and set
+`skip_upload: false` under `winget`. Each release then opens a pull request against the fork,
+which is submitted upstream by hand.
 
 Package channels lag the release by design. If something is wrong with a binary, it is easier to
 fix before three package managers have distributed it.

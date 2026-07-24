@@ -1,0 +1,162 @@
+# Release pipeline. Everything published for a tag is built from this file by
+# .github/workflows/release.yml, never from a maintainer's machine.
+#
+# The settings here mirror docs/release-process.md. Where the two disagree, the
+# document is the intent and this file is the bug.
+#
+# Try it without releasing anything:
+#
+#   make release-snapshot
+version: 2
+
+project_name: devnest
+
+before:
+  hooks:
+    - go mod download
+    - go mod verify
+
+builds:
+  - id: devnest
+    main: ./cmd/devnest
+    binary: devnest
+    # Static binaries with no runtime dependency, which is what makes
+    # "download and run" true on a locked-down machine.
+    env:
+      - CGO_ENABLED=0
+    flags:
+      - -trimpath
+    ldflags:
+      - -s -w
+      - -X github.com/devnest/devnest/internal/version.version={{ .Version }}
+      - -X github.com/devnest/devnest/internal/version.commit={{ .FullCommit }}
+      - -X github.com/devnest/devnest/internal/version.buildDate={{ .CommitDate }}
+    # The build date is the commit date rather than the moment of building, so
+    # the same tag built twice produces identical bytes.
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    goos: [windows, linux, darwin]
+    goarch: [amd64, arm64]
+
+archives:
+  - id: devnest
+    ids: [devnest]
+    name_template: "{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}"
+    formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    files:
+      - README.md
+      - LICENSE
+      - CHANGELOG.md
+
+# Linux packages. The distribution repositories themselves are not a channel
+# DevNest can use, because they require an OSI-approved licence and the Commons
+# Clause means this one is not; a .deb and a .rpm on the release page have no
+# such requirement.
+nfpms:
+  - id: devnest
+    ids: [devnest]
+    package_name: devnest
+    vendor: DevNest
+    homepage: https://github.com/zeeqsleepy/DevNest
+    maintainer: zeeqsleepy <zeeqslez@gmail.com>
+    description: |-
+      Single-binary developer toolkit: organise files, find duplicates by
+      content, probe hosts, inspect TLS certificates, generate and judge
+      passwords, analyse logs, inspect JSON and YAML.
+    license: Apache-2.0 with Commons Clause
+    formats: [deb, rpm]
+    bindir: /usr/bin
+    # No version in the file name, so that the download links in
+    # installation.md can point at /releases/latest/download/ and keep working.
+    file_name_template: "{{ .PackageName }}_{{ .Os }}_{{ .Arch }}"
+    contents:
+      - src: LICENSE
+        dst: /usr/share/doc/devnest/LICENSE
+      - src: README.md
+        dst: /usr/share/doc/devnest/README.md
+
+checksum:
+  name_template: checksums.txt
+  algorithm: sha256
+
+snapshot:
+  version_template: "{{ incpatch .Version }}-snapshot"
+
+changelog:
+  # The changelog people read is CHANGELOG.md, written by a person. This one
+  # only groups the commits, for anybody who wants the detail behind an entry.
+  use: github
+  sort: asc
+  groups:
+    - title: Features
+      regexp: '^feat'
+      order: 0
+    - title: Fixes
+      regexp: '^(fix|perf)'
+      order: 1
+    - title: Everything else
+      order: 2
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+      - '^chore:'
+
+# The Homebrew tap is self-hosted for the same licence reason as the
+# distribution repositories: Homebrew core requires an OSI-approved licence.
+#
+# Publishing is off until the tap repository exists and a token for it is in
+# the release secrets. The formula is still generated and uploaded with the
+# release, so the tap can be started by hand from it. See
+# docs/release-process.md for the two steps that turn this on.
+homebrew_casks:
+  - name: devnest
+    ids: [devnest]
+    repository:
+      owner: zeeqsleepy
+      name: homebrew-devnest
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/zeeqsleepy/DevNest
+    description: Single-binary developer toolkit for files, networks, logs, and secrets
+    skip_upload: true
+    hooks:
+      post:
+        # macOS quarantines anything downloaded that Apple has not notarised,
+        # and DevNest is not notarised. Clearing the attribute here is what
+        # stops the first run from being blocked with no explanation.
+        install: |
+          if system_command("/usr/bin/xattr", args: ["-h"]).exit_status == 0
+            system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/devnest"]
+          end
+
+# The winget manifest is generated and uploaded with the release. Submitting it
+# needs a fork of microsoft/winget-pkgs and a token, which is why publishing is
+# off here rather than half-configured.
+winget:
+  - name: DevNest
+    publisher: zeeqsleepy
+    short_description: Single-binary developer toolkit for files, networks, logs, and secrets
+    license: Apache-2.0 with Commons Clause
+    homepage: https://github.com/zeeqsleepy/DevNest
+    publisher_url: https://github.com/zeeqsleepy
+    package_identifier: zeeqsleepy.DevNest
+    skip_upload: true
+    repository:
+      owner: zeeqsleepy
+      name: winget-pkgs
+      branch: "devnest-{{ .Version }}"
+      token: "{{ .Env.WINGET_TOKEN }}"
+
+release:
+  github:
+    owner: zeeqsleepy
+    name: DevNest
+  # A pre-1.0 tag is a pre-release, because 1.0 is where the compatibility
+  # promise starts and nothing before it should look like a stable version.
+  prerelease: auto
+  draft: false
+  extra_files:
+    - glob: ./dist/homebrew/Casks/*.rb
+    - glob: ./dist/winget/**/*.yaml

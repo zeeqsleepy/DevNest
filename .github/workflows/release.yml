@@ -1,0 +1,135 @@
+name: Release
+
+# A tag is the only thing that publishes. Release binaries are never built on a
+# maintainer's machine: a local build carries whatever that machine happened to
+# have installed, and reproducibility is the point.
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  GO_VERSION: "1.25"
+
+jobs:
+  # The same checks CI runs on main, run again against the tagged commit. A tag
+  # can point at a commit CI never saw, and finding that out after the archives
+  # are on the release page is finding out too late.
+  verify:
+    name: verify (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          check-latest: true
+
+      - name: Test
+        run: go test -race -count=1 ./...
+
+      - name: End-to-end tests
+        shell: bash
+        run: |
+          mkdir -p dist
+          go build -trimpath -o dist/devnest ./cmd/devnest
+          go test -count=1 -tags=e2e ./tests/...
+
+  release:
+    name: release
+    needs: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      # The full history and the tags, because the release notes are built from
+      # the commits since the previous tag.
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          check-latest: true
+
+      - name: Build and publish
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          version: "~> v2"
+          args: release --clean
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Both publishers are off in .goreleaser.yaml until their repositories
+          # and tokens exist. The fallbacks keep the template resolvable so that
+          # turning one on is a one-line change rather than a debugging session.
+          HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN || github.token }}
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN || github.token }}
+
+  # Downloading what was actually published and running it is the only check
+  # that covers the archive as well as the binary. It runs after publishing
+  # rather than before because the artifacts have to exist to be downloaded; a
+  # failure here means the release is deleted, which is cheap.
+  smoke:
+    name: smoke (${{ matrix.os }})
+    needs: release
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          check-latest: true
+
+      - name: Download the published archive
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          case "${{ runner.os }}" in
+            Windows) archive="devnest-windows-amd64.zip" ;;
+            Linux)   archive="devnest-linux-amd64.tar.gz" ;;
+            macOS)   archive="devnest-darwin-arm64.tar.gz" ;;
+          esac
+
+          gh release download "${GITHUB_REF_NAME}" --pattern "$archive" --pattern checksums.txt
+          mkdir -p dist
+
+          # The checksum is verified the way the documentation tells a user to
+          # verify it, so the instructions are tested as well as the file.
+          # macOS ships shasum rather than sha256sum.
+          if command -v sha256sum > /dev/null; then
+            grep "$archive" checksums.txt | sha256sum --check -
+          else
+            grep "$archive" checksums.txt | shasum -a 256 --check -
+          fi
+
+          case "$archive" in
+            *.zip) powershell -Command "Expand-Archive -Path '$archive' -DestinationPath dist -Force" ;;
+            *)     tar -xzf "$archive" -C dist ;;
+          esac
+
+      - name: Run the published binary
+        shell: bash
+        run: |
+          binary="$PWD/dist/devnest"
+          [ "${{ runner.os }}" = "Windows" ] && binary="$PWD/dist/devnest.exe"
+
+          "$binary" version
+          "$binary" version --output json | grep -q "${GITHUB_REF_NAME#v}"
+
+          # The path is absolute because "go test" runs each package in its own
+          # directory, and a relative one would resolve against tests/.
+          DEVNEST_BINARY="$binary" go test -count=1 -tags=e2e ./tests/...

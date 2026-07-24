@@ -1,7 +1,7 @@
 # Roadmap
 
-Status: phases 0 through 9 complete, phase 10 in progress
-Last revised: 2026-07-24
+Status: phases 0 through 9 complete; phase 10 complete except the first release itself
+Last revised: 2026-07-25
 
 Where the project is going and roughly in what order. Phases are ordered by dependency, not by
 date: a phase ships when it is done, and the ordering exists so that each phase has a working
@@ -286,10 +286,14 @@ Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
 - Packaging: winget, a self-hosted Homebrew tap, deb and rpm from the release page, tarballs.
   Homebrew core and the Linux distribution repositories require an OSI-approved licence, and the
   Commons Clause means DevNest's is not one. The channels above have no such requirement, and
-  building binaries from source is unrestricted either way.
-- Documentation pass across everything, with all examples tested. *(in progress: every `devnest`
-  line in the documentation is now checked against the real binary by a test, which is what
-  found the missing `config` group, three renamed commands, and a flag that never existed.)*
+  building binaries from source is unrestricted either way. *(done: `.goreleaser.yaml` and the
+  release workflow build the archives, the packages, the checksums, the winget manifests, and the
+  Homebrew cask on a tag, then download what was published and run it on all three platforms. The
+  two submission channels stay switched off until their repositories exist; `release-process.md`
+  records the one field each that turns them on.)*
+- Documentation pass across everything, with all examples tested. *(done: every `devnest` line in
+  the documentation is checked against the real binary by a test, which is what found the missing
+  `config` group, three renamed commands, and a flag that never existed.)*
 - A full benchmark run against `performance.md`, with baselines committed. *(done: every target
   has a benchmark, the numbers are in `performance.md`, and `benchmarks/baseline.txt` is the
   committed baseline.)*

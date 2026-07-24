@@ -108,6 +108,17 @@ dist-all: ## Cross-compile every release target
 			-o $(DIST)/$(BINARY)-$$os-$$arch$$ext ./cmd/$(BINARY); \
 	done
 
+# GoReleaser is a build tool, not a dependency: it is fetched on demand and
+# never enters the module graph. The version is pinned so that a release built
+# today and the same tag rebuilt next year go through the same pipeline.
+GORELEASER := go run github.com/goreleaser/goreleaser/v2@v2.17.0
+
+release-check: ## Validate the release configuration
+	$(GORELEASER) check
+
+release-snapshot: ## Build every release artifact locally, publishing nothing
+	$(GORELEASER) release --snapshot --clean
+
 clean: ## Remove build output and reports
 	rm -rf $(DIST)
 	rm -f $(REPORTS)/coverage.out $(REPORTS)/coverage.html
