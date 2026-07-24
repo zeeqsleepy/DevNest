@@ -111,7 +111,7 @@ jobs:
       # The version is pinned rather than tracking latest. A linter that gains
       # a rule overnight turns an unrelated pull request red, and the person
       # who has to work that out is never the one who wanted the new rule.
-      - uses: golangci/golangci-lint-action@v8
+      - uses: golangci/golangci-lint-action@v9
         with:
           version: v2.12.2
           args: --config tools/golangci.yml ./...
