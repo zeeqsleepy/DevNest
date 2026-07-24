@@ -74,6 +74,7 @@ type Env struct {
 	command  string
 	started  time.Time
 	warnings []output.Warning
+	export   *export
 }
 
 // Warn records a non-fatal problem. It appears in the result envelope and is
@@ -85,8 +86,7 @@ func (e *Env) Warn(code errors.Code, message string, attrs ...any) {
 
 // Emit renders a successful result: data for machines, text for people.
 func (e *Env) Emit(data any, text output.TextFunc) error {
-	envelope := output.NewEnvelope(e.meta(), data).WithWarnings(e.warnings)
-	return e.Renderer.Render(e.Stdout, envelope, text)
+	return e.emit(data, text, nil)
 }
 
 // EmitTable renders a result that also has a row view, so that --output csv
@@ -96,11 +96,36 @@ func (e *Env) Emit(data any, text output.TextFunc) error {
 // Anything else keeps calling Emit and reports honestly that it has no csv
 // form, which is better than inventing one.
 func (e *Env) EmitTable(data any, text output.TextFunc, table output.TableFunc) error {
-	envelope := output.NewEnvelope(e.meta(), data).WithWarnings(e.warnings)
-	if rows, ok := e.Renderer.(output.RowRenderer); ok {
-		return rows.RenderRows(e.Stdout, envelope, table)
+	return e.emit(data, text, table)
+}
+
+// emit writes the result to the terminal and, when --export was given, to a
+// file as well. The file is written after the terminal output, so a person
+// watching sees the result even when the export fails; the export failing is
+// still fatal, because the user asked for a file.
+func (e *Env) emit(data any, text output.TextFunc, table output.TableFunc) error {
+	if e.export != nil && e.export.exists() {
+		e.Warn(errors.CodeIO, "overwriting "+e.export.path)
 	}
-	return e.Renderer.Render(e.Stdout, envelope, text)
+
+	envelope := output.NewEnvelope(e.meta(), data).WithWarnings(e.warnings)
+
+	rows, ok := e.Renderer.(output.RowRenderer)
+	switch {
+	case ok && table != nil:
+		if err := rows.RenderRows(e.Stdout, envelope, table); err != nil {
+			return err
+		}
+	default:
+		if err := e.Renderer.Render(e.Stdout, envelope, text); err != nil {
+			return err
+		}
+	}
+
+	if e.export == nil {
+		return nil
+	}
+	return e.export.write(envelope, text, table)
 }
 
 func (e *Env) meta() output.Meta {

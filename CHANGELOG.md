@@ -10,6 +10,27 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: exporting results to a file
+
+- `--export <path>` on every command: write the result to a file as well as to the terminal. The
+  format follows the extension (`.json`, `.csv`, `.md`, `.txt`), or `--export-format` says it.
+- `--output markdown`, and with it a report meant for pasting into a ticket: headings, a summary
+  table, and the detail below, with the numbers formatted for reading.
+- `devnest export <command...>`: run several commands and write one combined document. A command
+  with a space in it is one argument, so `devnest export "secret scan" scan` runs two. A failure
+  does not stop the rest, and the exit code is the worst of the individual ones.
+
+Exporting never replaces terminal output. Somebody who exports a scan usually also wants to watch
+it, and a command that went quiet because a file was requested is a command people run twice.
+
+The file is written by rendering beside the target and renaming over it, so an interrupted run
+leaves the previous report or the new one, never a truncated file that still looks valid.
+
+The markdown renderer is driven by the same JSON the machine format emits rather than by a view
+written per command, which is what stops a report and a terminal run from describing the same
+result differently. The JSON field-name conventions are what make that possible: a field ending in
+`Bytes` is a size, one ending in `Ms` is a duration, and a list of flat objects is a table.
+
 ### Added: self-check
 
 - `devnest doctor`: check this installation. Whether the configuration file parses and holds values

@@ -210,7 +210,7 @@ func TestMissingExplicitConfigIsNotFound(t *testing.T) {
 }
 
 func TestUnsupportedOutputFormatIsRejected(t *testing.T) {
-	got := exec(t, nil, append(isolated(t), "version", "--output", "markdown")...)
+	got := exec(t, nil, append(isolated(t), "version", "--output", "pdf")...)
 
 	if got.err == nil {
 		t.Fatal("Execute accepted an unsupported output format")

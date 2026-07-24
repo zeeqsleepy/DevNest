@@ -7,9 +7,9 @@ import (
 )
 
 // Output formats DevNest can currently render. CSV arrived with the log
-// module, the first group whose results are rows. Markdown is described in
-// docs/export-system.md and lands with the export flag.
-var outputFormats = []string{"table", "json", "csv"}
+// module, the first group whose results are rows; markdown with --export,
+// where it is the format for pasting a report into a ticket.
+var outputFormats = []string{"table", "json", "csv", "markdown"}
 
 var (
 	colorModes  = []string{"auto", "always", "never"}

@@ -253,6 +253,8 @@ wherever it appears.
 |---|---|---|
 | `-o, --output <format>` | `table` | Output format |
 | `--config <path>` | platform default | Configuration file to use |
+| `--export <path>` | none | Also write the result to a file |
+| `--export-format <format>` | from the extension | Format of the exported file |
 | `-q, --quiet` | off | Suppress all non-error output |
 | `-v, --verbose` | off | Debug-level logging to stderr |
 | `--no-color` | auto | Disable colour; `NO_COLOR` is honoured too |
@@ -261,19 +263,24 @@ wherever it appears.
 | `-h, --help` | none | Help for the current command |
 | `--version` | none | Version and build information |
 
-Four flags described elsewhere in this documentation are not implemented yet: `--export` and
-`--export-format` (see `export-system.md`), `--dry-run` and `--yes` (see `design.md`), and
-`--compact`. Each arrives with the first command that has something to export, delete, or confirm.
-A global flag that silently does nothing is worse than one that does not exist.
+Three flags described elsewhere in this documentation are not implemented yet: `--dry-run` and
+`--yes` (see `design.md`), and `--compact`. Each arrives with the first command that has something
+to delete or confirm. A global flag that silently does nothing is worse than one that does not
+exist.
+
+There is no global `--force`: `clean` and `port free` each define one that means something specific
+to them, and a second meaning for the same word is how a destructive flag gets typed by habit.
 
 Both `-flag value` and `-flag=value` work, and either one or two leading dashes. Combined short
 flags (`-qv`) are not supported.
 
 ## Output selection
 
-`--output` takes `table`, `json`, or `csv`, and defaults to `table`. `markdown` is described in
-`export-system.md` and lands with the export flag; asking for it now is a usage error that names
-the supported formats.
+`--output` takes `table`, `json`, `csv`, or `markdown`, and defaults to `table`. Anything else is a
+usage error that names the supported formats.
+
+`markdown` arrived with `--export`, where it is the format for pasting a report into a ticket. It
+is available on the terminal too, for reading a report before writing one.
 
 `csv` arrived in Phase 5 with the `log` group, the first whose results are genuinely rows. It is
 available to any command that supplies a row view of its result, and refused, with a message

@@ -750,6 +750,11 @@ runs when the configuration file will not load, because it is the command that s
 
 A convenience wrapper over `--export` for multi-command reports. Detail in `export-system.md`.
 
+Each argument is one command, so a subcommand goes in quotes: `devnest export "secret scan" scan`.
+Every command runs with its defaults, since a flag here could not be told apart from the next
+command's name. A failing command does not stop the ones after it, and the exit code is the worst
+of the individual ones.
+
 ---
 
 ## `devnest completion`: shell completion

@@ -12,7 +12,7 @@ import (
 )
 
 func TestNewRenderer(t *testing.T) {
-	for _, name := range []string{"table", "json", "csv"} {
+	for _, name := range []string{"table", "json", "csv", "markdown"} {
 		renderer, err := NewRenderer(name)
 		if err != nil {
 			t.Fatalf("NewRenderer(%q): %v", name, err)
@@ -22,9 +22,9 @@ func TestNewRenderer(t *testing.T) {
 		}
 	}
 
-	_, err := NewRenderer("markdown")
+	_, err := NewRenderer("pdf")
 	if err == nil {
-		t.Fatal("NewRenderer accepted a format that is not implemented yet")
+		t.Fatal("NewRenderer accepted a format that does not exist")
 	}
 	if got := errors.CodeOf(err); got != errors.CodeInvalidInput {
 		t.Errorf("code = %q, want %q", got, errors.CodeInvalidInput)

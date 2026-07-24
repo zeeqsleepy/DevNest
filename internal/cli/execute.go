@@ -128,6 +128,11 @@ func newEnv(command *Command, started time.Time, globals *globalFlags, opts Opti
 		return nil, err
 	}
 
+	exported, err := newExport(resolved.Export, globals.exportPath, globals.exportFormat, started)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Env{
 		Config:         resolved,
 		Logger:         logger,
@@ -139,6 +144,7 @@ func newEnv(command *Command, started time.Time, globals *globalFlags, opts Opti
 		ConfigExplicit: globals.configPath != "",
 		command:        strings.TrimPrefix(command.path(), "devnest "),
 		started:        started,
+		export:         exported,
 	}, nil
 }
 

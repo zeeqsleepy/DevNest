@@ -201,7 +201,7 @@ func TestValidateRejectsUnknownEnumValues(t *testing.T) {
 		name   string
 		mutate func(*Config)
 	}{
-		{"output", func(c *Config) { c.General.Output = "markdown" }},
+		{"output", func(c *Config) { c.General.Output = "pdf" }},
 		{"color", func(c *Config) { c.General.Color = "sometimes" }},
 		{"verbosity", func(c *Config) { c.General.Verbosity = "trace" }},
 	}

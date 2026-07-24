@@ -1387,3 +1387,138 @@ func TestDoctorReportsABrokenConfigFile(t *testing.T) {
 		t.Errorf("the report does not show a failed check:\n%s", stdout.String())
 	}
 }
+
+// readExport returns the exported file. The name is matched rather than
+// compared, because export.timestamp_files is on by default and puts a
+// timestamp before the extension so that repeated runs do not overwrite each
+// other.
+func readExport(t *testing.T, path string) string {
+	t.Helper()
+
+	extension := filepath.Ext(path)
+	pattern := strings.TrimSuffix(path, extension) + "*" + extension
+
+	matches, err := filepath.Glob(pattern)
+	if err != nil || len(matches) != 1 {
+		t.Fatalf("looking for %s found %v (%v)", pattern, matches, err)
+	}
+
+	contents, err := os.ReadFile(matches[0])
+	if err != nil {
+		t.Fatalf("read the export: %v", err)
+	}
+	return string(contents)
+}
+
+// Exporting does not replace terminal output: somebody who asks for a file
+// usually also wants to watch what happened.
+func TestExportWritesAFileAndStillPrints(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "version.json")
+
+	got := runBinary(t, "version", "--export", path)
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if !strings.Contains(got.stdout, "version") {
+		t.Errorf("nothing was printed to the terminal:\n%s", got.stdout)
+	}
+
+	contents := readExport(t, path)
+
+	var envelope struct {
+		DevNest struct {
+			Command string `json:"command"`
+		} `json:"devnest"`
+		Data map[string]any `json:"data"`
+	}
+	if err := json.Unmarshal([]byte(contents), &envelope); err != nil {
+		t.Fatalf("the exported file is not JSON: %v\n%s", err, contents)
+	}
+	if envelope.DevNest.Command != "version" || len(envelope.Data) == 0 {
+		t.Errorf("the exported envelope is not the result: %s", contents)
+	}
+}
+
+// The format follows the extension, and markdown is the format meant for
+// pasting into a ticket.
+func TestExportMarkdownIsAReport(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "scan.md")
+
+	got := runBinary(t, "scan", moduleRoot(t), "--export", path)
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+
+	contents := readExport(t, path)
+	for _, want := range []string{"# Scan report", "Generated ", "| Metric | Value |"} {
+		if !strings.Contains(contents, want) {
+			t.Errorf("the report does not contain %q:\n%s", want, contents)
+		}
+	}
+}
+
+// A format nobody can infer is a question, not a guess.
+func TestExportRefusesAnUnknownExtension(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "version.dat")
+
+	got := runBinary(t, "version", "--export", path)
+	if got.exitCode != 2 {
+		t.Errorf("exit code = %d, want 2\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if _, err := os.Stat(path); err == nil {
+		t.Error("a file was written despite the refusal")
+	}
+}
+
+// Overwriting a report is allowed and is said out loud, because the previous
+// one is gone either way. Timestamped names are turned off here, since their
+// whole purpose is that a second run does not overwrite the first.
+func TestExportWarnsBeforeOverwriting(t *testing.T) {
+	directory := t.TempDir()
+	path := filepath.Join(directory, "version.json")
+
+	config := filepath.Join(directory, "config.toml")
+	if err := os.WriteFile(config, []byte("[export]\ntimestamp_files = false\n"), 0o600); err != nil {
+		t.Fatalf("write config: %v", err)
+	}
+
+	run := func() string {
+		command := exec.Command(binaryPath(t), "version", "--export", path,
+			"--output", "json", "--config", config)
+		var stdout, stderr bytes.Buffer
+		command.Stdout = &stdout
+		command.Stderr = &stderr
+		if err := command.Run(); err != nil {
+			t.Fatalf("run: %v; stderr: %s", err, stderr.String())
+		}
+		return stdout.String()
+	}
+
+	if first := run(); strings.Contains(first, "overwriting") {
+		t.Errorf("the first run reported an overwrite:\n%s", first)
+	}
+	if second := run(); !strings.Contains(second, "overwriting") {
+		t.Errorf("the overwrite was not reported:\n%s", second)
+	}
+	if _, err := os.Stat(path); err != nil {
+		t.Errorf("the export is not at the path that was asked for: %v", err)
+	}
+}
+
+// The point of the combined report is that one file answers the questions a
+// bug report asks, so it has to hold every section it ran.
+func TestExportCommandWritesOneCombinedReport(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "health.md")
+
+	got := runBinary(t, "export", "version", "doctor", "--export", path)
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+
+	contents := readExport(t, path)
+	for _, want := range []string{"# Export report", "### version", "### doctor"} {
+		if !strings.Contains(contents, want) {
+			t.Errorf("the report does not contain %q:\n%s", want, contents)
+		}
+	}
+}

@@ -108,7 +108,9 @@ func NewRenderer(name string) (Renderer, error) {
 		return jsonRenderer{}, nil
 	case "csv":
 		return csvRenderer{}, nil
+	case "markdown", "md":
+		return markdownRenderer{}, nil
 	}
 	return nil, errors.New(errors.CodeInvalidInput, "unsupported output format %q", name).
-		WithHint("expected one of: table, json, csv")
+		WithHint("expected one of: table, json, csv, markdown")
 }

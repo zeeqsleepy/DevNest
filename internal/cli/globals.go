@@ -6,9 +6,13 @@ import "flag"
 // means the same thing wherever it appears.
 //
 // The flags described in docs/cli-reference.md that are not here yet
-// (--export, --dry-run, --yes, --compact) land with the first command that
-// has something to export, delete, or confirm. A global flag that silently
-// does nothing is worse than one that does not exist.
+// (--dry-run, --yes, --compact) land with the first command that has something
+// to delete or confirm. A global flag that silently does nothing is worse than
+// one that does not exist.
+//
+// There is no global --force: several commands already define one that means
+// something specific to them, and a global flag of the same name would be a
+// second meaning for the same word.
 type globalFlags struct {
 	output        string
 	quiet         bool
@@ -19,6 +23,8 @@ type globalFlags struct {
 	logTimestamps bool
 	help          bool
 	showVersion   bool
+	exportPath    string
+	exportFormat  string
 }
 
 func (g *globalFlags) register(set *flag.FlagSet) {
@@ -37,6 +43,10 @@ func (g *globalFlags) register(set *flag.FlagSet) {
 	set.StringVar(&g.logFormat, "log-format", "", "log format: text, json (defaults to the output format)")
 	set.BoolVar(&g.logTimestamps, "log-timestamps", false, "include timestamps in text logs")
 
+	set.StringVar(&g.exportPath, "export", "", "also write the result to a file")
+	set.StringVar(&g.exportFormat, "export-format", "",
+		"format of the exported file: json, csv, markdown (defaults to the extension)")
+
 	set.BoolVar(&g.help, "help", false, "show help for this command")
 	set.BoolVar(&g.help, "h", false, "show help for this command (shorthand)")
 
@@ -48,8 +58,10 @@ func (g *globalFlags) register(set *flag.FlagSet) {
 // their long forms and the order is stable.
 func globalFlagHelp() []flagHelp {
 	return []flagHelp{
-		{"-o, --output <format>", "Output format: table, json, csv (default \"table\")"},
+		{"-o, --output <format>", "Output format: table, json, csv, markdown (default \"table\")"},
 		{"    --config <path>", "Path to a configuration file"},
+		{"    --export <path>", "Also write the result to a file"},
+		{"    --export-format <format>", "Format of the exported file (default: from the extension)"},
 		{"-q, --quiet", "Suppress all non-error output"},
 		{"-v, --verbose", "Debug-level logging to stderr"},
 		{"    --no-color", "Disable coloured output"},

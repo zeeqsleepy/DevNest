@@ -18,6 +18,7 @@ func NewRoot() *Command {
 			newDoctorCommand(),
 			newEncodeCommand(),
 			newEnvCommand(),
+			newExportCommand(),
 			newFileCommand(),
 			newGitCommand(),
 			newHelpCommand(),

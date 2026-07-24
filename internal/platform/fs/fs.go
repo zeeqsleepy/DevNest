@@ -314,6 +314,51 @@ func (s System) EnsureDir(path string) error {
 	return nil
 }
 
+// WriteAtomic writes a file by rendering it beside the target and renaming it
+// into place, creating the directory if it is missing.
+//
+// The temporary file lives in the destination directory so the rename stays
+// within one filesystem and therefore stays atomic. An interrupted write leaves
+// the previous file or the new one, never a truncated file that still looks
+// valid, which is what matters when the file is a report somebody decides to
+// trust.
+func (s System) WriteAtomic(path string, data []byte) error {
+	directory := filepath.Dir(path)
+	if err := s.EnsureDir(directory); err != nil {
+		return err
+	}
+
+	file, err := os.CreateTemp(directory, ".devnest-write-*")
+	if err != nil {
+		return wrapPath("write", path, err)
+	}
+	temporary := file.Name()
+
+	if err := writeAndSync(file, data); err != nil {
+		os.Remove(temporary)
+		return wrapPath("write", path, err)
+	}
+	if err := os.Rename(temporary, path); err != nil {
+		os.Remove(temporary)
+		return wrapPath("write", path, err)
+	}
+	return nil
+}
+
+// writeAndSync flushes to the disk rather than to the operating system's cache,
+// so a report that exists after a crash is a complete one.
+func writeAndSync(file *os.File, data []byte) error {
+	if _, err := file.Write(data); err != nil {
+		file.Close()
+		return err
+	}
+	if err := file.Sync(); err != nil {
+		file.Close()
+		return err
+	}
+	return file.Close()
+}
+
 // Writable reports whether a directory can be written to, by writing to it and
 // removing what it wrote.
 //
