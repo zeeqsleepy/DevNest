@@ -1,6 +1,6 @@
 # Roadmap
 
-Status: phases 0 through 8 complete
+Status: phases 0 through 9 complete
 Last revised: 2026-07-24
 
 Where the project is going and roughly in what order. Phases are ordered by dependency, not by
@@ -247,13 +247,32 @@ Decisions worth carrying forward, recorded in `modules.md`, `security.md`, and `
 - **`vendor` is deliberately not a rule.** It is checked in on purpose in plenty of repositories,
   and deleting it breaks an offline build.
 
-## Phase 9: Repository and secret scanning
+## Phase 9: Repository and secret scanning *(complete)*
 
-- `core/git`: summary, stale branches, contributors, large objects.
-- `core/secret`: rule set, entropy scoring, redaction, history scanning.
+- `core/git`: summary, branches, stale branches, contributors, large objects.
+- `core/secret`: sixteen rules, entropy scoring, redaction, working-tree and history scanning.
+- `platform/proc`: gained a per-command output limit, because the default is sized for a version
+  banner and git listing every object in a repository is not that.
 
-The history-scanning default question from `prd.md` gets decided here, informed by how slow it
-actually turns out to be.
+**Done:** nine commands with tests at three levels. `internal/core` is at 91%.
+
+Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
+
+- **The history-scanning question from `prd.md` is settled: the working tree is the default and
+  history is a separate command.** A pre-commit hook wants the tree and wants it fast; an audit
+  wants the history and can wait. Making history the default would have put minutes into every
+  hook, and a hook people disable protects nothing.
+- **`secret history` reads added lines only**, and reports one credential once however many times
+  it was added and reverted.
+- **A finding has no field holding the value.** Redaction happens where the finding is built, not
+  where it is rendered, so no output format, verbosity, or export can leak one. A test serialises
+  a result to JSON and fails if a credential appears anywhere in it.
+- **Every rule carries an entropy floor**, including the provider-prefix ones, which is what keeps
+  `sk_live_XXXXXXXXXXXX` out of a report that would otherwise teach people to ignore it.
+- **`git` is read-only and the test proves it**: the fake records every invocation and fails the
+  build if any is a subcommand that can write.
+- **Fields are joined with 0x1F, not a null byte.** An argument vector is null-terminated, so no
+  argument may contain one; a tab or a pipe appears in commit subjects.
 
 ## Phase 10: Polish and 1.0
 

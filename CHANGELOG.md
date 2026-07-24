@@ -10,6 +10,36 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: credential scanning
+
+- `devnest secret scan [path]`: search a working tree for credential-shaped strings. Sixteen rules:
+  provider prefixes that mean one thing (`AKIA`, `ghp_`, `sk_live_`, `AIza`, `xox`), private key
+  headers, passwords inside connection strings, and two generic rules for a value assigned to
+  something named like a secret.
+- `devnest secret history [path]`: the same over a repository's history, where a credential deleted
+  two years ago is still committed and still leaked. Added lines only; one credential added,
+  reverted, and re-added is reported once. The last 500 commits by default, `--all` for the lot.
+- `devnest secret rules`: every detector with its severity and its entropy floor. This is the whole
+  surface of what a scan can find, which is worth reading before trusting a clean result.
+- `devnest secret test <string>`: which rules a value matches and what it scored, for tuning. The
+  value is never echoed back, because somebody testing a scanner is testing real credentials as
+  often as not.
+
+**A matched value is never printed in full**, and the guarantee is structural rather than careful:
+a finding has no field holding it. Four characters and a length is all that exists downstream, so
+no renderer, export, or verbosity setting can leak one. A test serialises a whole result to JSON
+and fails if a credential appears anywhere in it.
+
+Every rule carries an entropy floor, including the provider-prefix ones, which is what keeps
+`sk_live_XXXXXXXXXXXX` out of a report. Fixture directories, lock files, and dependency
+directories are skipped by default, and a `devnest:allow-secret` comment silences one line. What
+comes back is described as candidates, in those words, because a scanner people have learned to
+ignore finds nothing at all.
+
+`--fail-on <severity>` turns a scan into a gate: with it, findings at or above that level exit
+non-zero, which is what a pre-commit hook or a CI step needs. Without it, finding something is
+still a successful run.
+
 ### Added: repository inspection
 
 - `devnest git [path]`: what a repository is. Branch, HEAD, remotes, commit and branch and tag

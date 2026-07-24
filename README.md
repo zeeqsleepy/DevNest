@@ -11,9 +11,10 @@ collection of installed utilities, and a browser tab for the things that are inc
 DevNest collects it into one executable with one consistent interface that behaves identically on
 Windows, Linux, and macOS.
 
-> **Status: Phase 8, system modules.** The `file`, `network`, `security`, `log`, `env`, `scan`,
-> `encode`, `decode`, `json`, `yaml`, `port`, and `clean` command groups work end to end. The rest
-> of the table below is still the plan. See [docs/roadmap.md](docs/roadmap.md).
+> **Status: Phase 9, repository and secret scanning.** Every command group except `doctor`,
+> `export`, and `init` works end to end: `file`, `network`, `security`, `log`, `env`, `scan`,
+> `encode`, `decode`, `json`, `yaml`, `port`, `clean`, `git`, and `secret`. See
+> [docs/roadmap.md](docs/roadmap.md).
 
 ## What works today
 
@@ -68,6 +69,13 @@ devnest port free 3000                 ask the process to exit, after naming it
 devnest clean .                        what a build could regenerate, and its size
 devnest clean apply . --pattern dist   remove one kind of directory, after confirming
 devnest clean rules                    everything clean would ever consider removing
+
+devnest git                            branch, remotes, counts, how idle the history is
+devnest git stale --print-commands     quiet branches, with the commands to remove them
+devnest git large                      what is making the repository slow to clone
+devnest secret scan --fail-on high     credentials in the tree, as a CI gate
+devnest secret history --all           credentials committed at any point, still leaked
+devnest secret rules                   every detector, its severity, its entropy floor
 ```
 
 Nothing in the file group deletes a file, and nothing that changes the disk does so without
@@ -82,8 +90,10 @@ output. The security module has no logger at all, which is the surest way to kee
 
 | | |
 |---|---|
-| `devnest git` | Repository summary, stale branches, contributors, large objects |
-| `devnest secret` | Scan for leaked credentials, findings always redacted |
+| `devnest doctor` | Self-check: configuration, permissions, rule set |
+| `devnest export` | Write any command's result to a file, and multi-command reports |
+| `devnest completion` | Shell completion for PowerShell, bash, zsh, fish |
+| Packaging | winget, a Homebrew tap, deb and rpm, tarballs |
 
 Full surface in [docs/commands.md](docs/commands.md).
 
@@ -108,7 +118,13 @@ credential-shaped headers are masked in output by default.
 
 **Safe by default.** Nothing destructive happens without an explicit flag. `devnest file organize`
 shows what it would move and stops; moving requires `--apply`, and even then an existing file is
-never replaced. No command deletes anything.
+never replaced.
+
+Two commands can destroy something, and both are built around that. `devnest clean` deletes only
+directories whose names are in a published rule table, needs a project file beside a generic name
+such as `build`, re-checks every candidate in the moment before removing it, and does nothing at
+all without `--apply`. `devnest port free` names the process, asks, and requests an exit rather
+than a kill unless you pass `--force`.
 
 ## Documentation
 

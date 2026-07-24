@@ -1,8 +1,8 @@
 # CLI Reference
 
 Status: partially implemented. The grammar, global flags, exit codes, and the `file`, `network`,
-`security`, `log`, `env`, `scan`, `encode`, `decode`, `json`, `yaml`, `port`, and `clean` command
-groups below are live as of Phase 8
+`security`, `log`, `env`, `scan`, `encode`, `decode`, `json`, `yaml`, `port`, `clean`, `git`, and
+`secret` command groups below are live as of Phase 9
 Last revised: 2026-07-24
 
 `commands.md` lists what the commands are. This document covers how the interface is put
@@ -127,6 +127,21 @@ The `clean` group shares these:
 `--apply` is on the group command only; `clean apply` is the same thing spelled as a verb. Neither
 `--pattern` nor `--protect` can widen what the rule set allows, and `--force` lifts only the
 protected-root refusal, never the marker requirement or the containment check.
+
+The `git` group shares `--days` on the two branch commands, where it means the same thing, and
+takes an optional path everywhere that defaults to the current directory. Every command in it is
+read-only.
+
+The `secret` group shares these across `scan` and `history`:
+
+| Flag | Default | Meaning |
+|---|---|---|
+| `--rule <name>` | every rule | Run only this detector; repeatable |
+| `--entropy <n>` | each rule's own | Override the floor a match has to clear |
+| `--fail-on <severity>` | none | Exit non-zero when a finding is at or above this |
+
+`--exclude` and `--include-tests` apply to the working-tree scan, which is the only one walking a
+filesystem; `--depth` and `--all` apply to the history scan, which is the only one reading commits.
 
 ## Supplying a secret
 
@@ -306,6 +321,8 @@ Check-style commands use the exit code as their answer. Live as of Phase 7:
 | `json query` | The expression selects nothing (exit 3, not found) |
 | `json`, `yaml` | The document does not parse (exit 1, with the line and column) |
 | `port check` | The port is in use (exit 3, not found) |
+| `secret scan` | Findings exist at or above `--fail-on` (exit 1); without the flag, finding something is a successful run |
+| `secret history` | The same, over the history |
 
 Still planned: `hash verify` exits 1 on mismatch. Each such command documents its exit codes in its
 own help text, since that is where someone writing a script will look.

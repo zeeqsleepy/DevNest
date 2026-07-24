@@ -146,8 +146,11 @@ Decided:
   implementing all of it, and implementing part of one is worse than having neither. Selecting a
   subtree is what a person at a terminal needs; anything past it is what `jq` is for.
 
-Still carried:
+- **Whether `devnest secret` scans history by default** (Phase 9): it does not. `secret scan`
+  reads the working tree and `secret history` reads the history, because the two have different
+  users. A pre-commit hook wants the tree and wants it in under a second; an audit wants the
+  history and can wait minutes for it. Making history the default would put that wait into every
+  commit, and a hook people disable protects nothing.
 
-- Should `devnest secret` scan git history by default, or only the working tree, with history
-  behind a flag? History scanning is much slower and much more useful.
+Still carried:
 - Does `devnest clean` need a project-local allow list file, or is a global config sufficient?

@@ -166,7 +166,19 @@ Linux, `lsof` on macOS), and process termination has three more. Two honest gaps
 rather than papered over: macOS uses `lsof` because `libproc` needs cgo, and Windows has no way to
 ask a process to exit, so `port free` there requires `--force`.
 
-The ten modules share nothing, and none imports another. All ten walk their own path to the
+`internal/core/git` and `internal/core/secret` are the eleventh and twelfth modules, added in Phase
+9. `git` declares a `Runner` and a `Locator` and runs the git executable, which is a decision
+recorded in `modules.md` and tested rather than trusted: the fake records every invocation and the
+build fails if any of them is a subcommand that can write. `secret` declares a `Reader` for the
+working-tree scan and a `Runner` used only by the history scan, so a tree scan cannot start a
+process.
+
+`secret` is also where a redaction rule is enforced by the type rather than by discipline: a
+`Finding` has no field holding the matched value, so no renderer, export, or verbosity setting can
+print one. A test serialises a whole result to JSON and fails if a credential appears anywhere in
+it.
+
+The twelve modules share nothing, and none imports another. All twelve walk their own path to the
 platform layer, which is the property the layering exists to protect.
 
 Where two of them genuinely need the same thing, the shared code lives one layer down or in a
@@ -461,3 +473,9 @@ Directions the structure already accommodates, without committing to any of them
 | `clean` requires a marker file beside a generic directory name | "build" is output in a project and somebody's work anywhere else | A project with no recognised marker file is not cleaned |
 | Every `clean` candidate is re-checked immediately before removal | The tree has had time to change since the scan | The guards run twice on every run |
 | `Scan` takes an interface with no destructive method | Calling the wrong function cannot delete anything | Two interfaces where one would compile |
+| `core/git` shells out rather than embedding a git library | Any machine with a repository has git; a git implementation is enormous | A subprocess per question, and git must be on PATH |
+| Read-only is asserted by a test over recorded invocations | "It only runs read subcommands" is a claim that decays; a test does not | The fake has to record every call |
+| Git fields are joined with 0x1F | A null byte cannot be passed in an argument vector; tabs and pipes appear in commit subjects | An unusual separator in every format string |
+| A secret `Finding` has no field for the matched value | Redaction that a renderer applies is one `--output json` from being bypassed | The value cannot be recovered downstream, by design |
+| Every secret rule carries an entropy floor | A placeholder has the shape of a key and none of the information | A genuinely low-entropy credential is missed |
+| History scanning is a separate command, not a default | A pre-commit hook wants the tree in under a second; an audit can wait minutes | Somebody has to know to run it |

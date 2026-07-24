@@ -1,8 +1,8 @@
 # Modules
 
 Status: `core/file`, `core/network`, `core/security`, `core/log`, `core/env`, `core/scan`,
-`core/encoding`, `core/data`, `core/port`, `core/clean`, and `core/git` implemented; `core/secret`
-and `core/doctor` planned
+`core/encoding`, `core/data`, `core/port`, `core/clean`, `core/git`, and `core/secret`
+implemented; `core/doctor` planned
 Last revised: 2026-07-24
 
 Every unit of real work in DevNest is a module: one package under `internal/core/`, one command
@@ -708,29 +708,46 @@ the risk lives.
 
 ---
 
-### `core/secret`: credential scanning
+### `core/secret`: credential scanning *(implemented)*
 
 **Owns.** Scanning a working tree, and optionally git history, for credential-shaped strings,
 reporting matches with file, line, rule name, and a redacted excerpt.
 
-**Rules.** Pattern rules with an optional entropy threshold, shipped as embedded data so the tool
-works offline and behaves identically everywhere. Users can add rules and allow-list known false
-positives through configuration.
+**Rules.** Pattern rules with an entropy threshold, compiled into the binary so the tool works
+offline and behaves identically everywhere. Sixteen of them: provider prefixes that mean one thing
+(`AKIA`, `ghp_`, `sk_live_`, `AIza`), private key headers, and two generic rules for an assignment
+to something named like a secret. The set is deliberately not exhaustive, because a scanner that
+recognises two hundred providers and fires on every second file gets switched off, and a scanner
+that is switched off finds nothing.
+
+**Every rule has an entropy floor**, including the ones matching a provider prefix. That is what
+separates a live Stripe key from `sk_live_` followed by twenty X characters: both have the
+right shape, and only one carries any information. A `Keyword` substring in front of each pattern
+keeps the expensive part cheap, since most lines match no rule at all.
+
+**History scanning reads added lines only.** A removal is not a second leak, and one credential
+added, reverted, and re-added is reported once. The default depth is 500 commits; the whole
+history is `--all` and is much slower, which is why it is a separate command rather than a flag on
+the working-tree scan.
 
 **False positives.** The dominant failure mode of every scanner of this kind. Mitigations: an
 entropy floor before a generic high-entropy rule fires, path-based exclusions for test fixtures
 and lock files, and an inline suppression comment. The scanner reports *candidates*, and the
 output says so: the human decides.
 
-**Output redaction.** Matched values are never printed in full. Enough context to locate the
-finding, never enough to use it. This holds even under `--verbose`, and applies to the JSON
-output as well, since reports get attached to tickets.
+**Output redaction.** Matched values are never printed in full: four characters and a length, which
+is enough to recognise which of twelve keys in a file this is and no use to anybody. The redaction
+happens where the finding is built rather than where it is rendered, and the `Finding` type has no
+field holding the value at all, so there is nothing for a renderer, an export, or a verbose flag to
+leak. A test serialises a whole result to JSON and fails if a credential appears anywhere in it.
 
-**Depends on.** `platform/fs`, `platform/proc` for history scanning, the shared classification
-rule set for exclusions.
+**Depends on.** `platform/fs` for the working-tree scan, `platform/proc` for history scanning. Only
+`History` takes a `Runner`, so a tree scan cannot start a process.
 
 **Later.** Baseline files so an existing repository can adopt scanning without drowning in
-historical findings.
+historical findings. User-supplied rules from configuration: the `secret.custom_rules` key is
+loaded and validated but not yet read by this module, because a user-supplied regular expression
+needs a complexity bound before it is compiled.
 
 ---
 

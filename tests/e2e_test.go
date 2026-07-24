@@ -259,7 +259,7 @@ func TestSecurityPasswordsDifferBetweenRuns(t *testing.T) {
 // The strength checker's whole privacy promise is that the password does not
 // come back out. Checked here against the real process, both streams.
 func TestSecurityPasswordCheckDoesNotEchoTheInput(t *testing.T) {
-	const password = "Zq7xKp3mWn8vTr4b"
+	const password = "Zq7xKp3mWn8vTr4b" // devnest:allow-secret
 
 	got := runBinary(t, "security", "password-check", password, "--output", "json")
 	if got.exitCode != 0 {
@@ -277,6 +277,7 @@ func TestSecurityPasswordCheckDoesNotEchoTheInput(t *testing.T) {
 // Giving a secret on the command line is a real disclosure, and the warning
 // has to name the safer flag rather than only stating the problem.
 func TestSecurityPasswordCheckWarnsAboutTheCommandLine(t *testing.T) {
+	// devnest:allow-secret
 	got := runBinary(t, "security", "password-check", "Zq7xKp3mWn8vTr4b")
 
 	if !strings.Contains(got.stderr, "--stdin") {
@@ -655,6 +656,7 @@ func TestEncodeAndDecodeRoundTripOnTheCommandLine(t *testing.T) {
 // run: the expiry is a fact about the input, not a failure of the command.
 func TestDecodeJWTReportsExpiryWithoutVerifying(t *testing.T) {
 	// {"alg":"HS256","typ":"JWT"} and {"sub":"ana","exp":1750000000}
+	// devnest:allow-secret
 	const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
 		"eyJzdWIiOiJhbmEiLCJleHAiOjE3NTAwMDAwMDB9.c2ln"
 
@@ -1117,6 +1119,132 @@ func TestGitGroupHelp(t *testing.T) {
 	for _, name := range []string{"branches", "stale", "contributors", "large"} {
 		if !strings.Contains(got.stdout, name) {
 			t.Errorf("git help does not list %q:\n%s", name, got.stdout)
+		}
+	}
+}
+
+// The secret commands are judged on two properties that only a real process
+// shows: a credential never reaches stdout, and --fail-on decides the exit
+// code. Everything below is built from a key that is famous for being fake.
+const exampleAWSKey = "AKIA" + "IOSFODNN7EXAMPLE"
+
+func writeLeakyProject(t *testing.T) string {
+	t.Helper()
+
+	root := t.TempDir()
+	files := map[string]string{
+		"config.yml":     "aws_access_key_id: " + exampleAWSKey + "\n",
+		"src/app.go":     "package main\n\nfunc main() {}\n",
+		"testdata/k.txt": exampleAWSKey + "\n",
+	}
+
+	for name, content := range files {
+		path := filepath.Join(root, filepath.FromSlash(name))
+		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+			t.Fatalf("create a directory: %v", err)
+		}
+		if err := os.WriteFile(path, []byte(content), 0o600); err != nil {
+			t.Fatalf("write a file: %v", err)
+		}
+	}
+	return root
+}
+
+// The property that matters more than any other in this group.
+func TestSecretScanNeverPrintsTheCredential(t *testing.T) {
+	root := writeLeakyProject(t)
+
+	for _, format := range []string{"table", "json", "csv"} {
+		got := runBinary(t, "secret", "scan", root, "--output", format)
+		if got.exitCode != 0 {
+			t.Fatalf("%s output exited %d\nstderr: %s", format, got.exitCode, got.stderr)
+		}
+		if strings.Contains(got.stdout, exampleAWSKey) {
+			t.Errorf("%s output contains the credential in full:\n%s", format, got.stdout)
+		}
+		if strings.Contains(got.stderr, exampleAWSKey) {
+			t.Errorf("%s run wrote the credential to stderr:\n%s", format, got.stderr)
+		}
+		if !strings.Contains(got.stdout, "AKIA") {
+			t.Errorf("%s output does not identify the finding at all:\n%s", format, got.stdout)
+		}
+	}
+}
+
+// Finding something is a successful run; --fail-on is what turns it into a
+// gate. Both halves matter: a scanner that always exits non-zero gets removed
+// from the pipeline within a week.
+func TestSecretScanExitCodes(t *testing.T) {
+	root := writeLeakyProject(t)
+
+	if got := runBinary(t, "secret", "scan", root); got.exitCode != 0 {
+		t.Errorf("a scan with findings exited %d, want 0\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if got := runBinary(t, "secret", "scan", root, "--fail-on", "high"); got.exitCode != 1 {
+		t.Errorf("--fail-on high exited %d, want 1", got.exitCode)
+	}
+	if got := runBinary(t, "secret", "scan", root, "--fail-on", "critical"); got.exitCode != 0 {
+		t.Errorf("--fail-on critical exited %d, want 0: the finding is high, not critical",
+			got.exitCode)
+	}
+	if got := runBinary(t, "secret", "scan", root, "--fail-on", "shouty"); got.exitCode != 2 {
+		t.Errorf("an invented severity exited %d, want 2", got.exitCode)
+	}
+}
+
+func TestSecretScanSkipsFixturesUnlessAsked(t *testing.T) {
+	root := writeLeakyProject(t)
+
+	quiet := runBinary(t, "secret", "scan", root)
+	if strings.Contains(quiet.stdout, "testdata") {
+		t.Errorf("a fixture directory was scanned by default:\n%s", quiet.stdout)
+	}
+
+	loud := runBinary(t, "secret", "scan", root, "--include-tests")
+	if !strings.Contains(loud.stdout, "testdata") {
+		t.Errorf("--include-tests did not reach the fixtures:\n%s", loud.stdout)
+	}
+}
+
+func TestSecretTestDoesNotEchoTheValue(t *testing.T) {
+	got := runBinary(t, "secret", "test", exampleAWSKey)
+
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if strings.Contains(got.stdout, exampleAWSKey) {
+		t.Errorf("the tuning command echoed the value:\n%s", got.stdout)
+	}
+	if !strings.Contains(got.stdout, "aws-access-key-id") {
+		t.Errorf("stdout does not name the rule that matched:\n%s", got.stdout)
+	}
+}
+
+func TestSecretRulesAndHistoryRun(t *testing.T) {
+	rules := runBinary(t, "secret", "rules")
+	if rules.exitCode != 0 {
+		t.Fatalf("secret rules exited %d\nstderr: %s", rules.exitCode, rules.stderr)
+	}
+	for _, want := range []string{"aws-access-key-id", "private-key", "entropy floor"} {
+		if !strings.Contains(rules.stdout, want) {
+			t.Errorf("secret rules does not mention %q:\n%s", want, rules.stdout)
+		}
+	}
+
+	history := runBinary(t, "secret", "history", moduleRoot(t), "--depth", "5")
+	if history.exitCode != 0 {
+		t.Fatalf("secret history exited %d\nstderr: %s", history.exitCode, history.stderr)
+	}
+}
+
+func TestSecretGroupHelp(t *testing.T) {
+	got := runBinary(t, "secret", "help")
+	if got.exitCode != 0 {
+		t.Fatalf("secret help exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	for _, name := range []string{"scan", "history", "rules", "test"} {
+		if !strings.Contains(got.stdout, name) {
+			t.Errorf("secret help does not list %q:\n%s", name, got.stdout)
 		}
 	}
 }

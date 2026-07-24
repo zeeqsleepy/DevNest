@@ -59,6 +59,7 @@ func fields() []field {
 		{"clean", "protect", kindStringList, func(c *Config, v any) { c.Clean.Protect = v.([]string) }},
 		{"clean", "require_confirm", kindBool, func(c *Config, v any) { c.Clean.RequireConfirm = v.(bool) }},
 
+		// devnest:allow-secret
 		{"secret", "entropy_threshold", kindFloat, func(c *Config, v any) { c.Secret.EntropyThreshold = v.(float64) }},
 		{"secret", "exclude_paths", kindStringList, func(c *Config, v any) { c.Secret.ExcludePaths = v.([]string) }},
 		{"secret", "custom_rules", kindStringList, func(c *Config, v any) { c.Secret.CustomRules = v.([]string) }},

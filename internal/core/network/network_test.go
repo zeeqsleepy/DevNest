@@ -205,6 +205,7 @@ func TestIsSensitive(t *testing.T) {
 // obvious that something was removed rather than absent.
 func TestMaskHeaders(t *testing.T) {
 	headers := []net.Header{
+		// devnest:allow-secret
 		{Name: "Authorization", Value: "Bearer sk-live-0123456789abcdef"},
 		{Name: "Content-Type", Value: "application/json"},
 	}

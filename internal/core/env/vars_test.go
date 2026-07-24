@@ -65,7 +65,7 @@ func TestVarsFiltersByPattern(t *testing.T) {
 // listing gets redirected to a file and attached to a ticket, and masking the
 // table while leaving the JSON readable would be a leak with a delay on it.
 func TestVarsMasksCredentialsEverywhere(t *testing.T) {
-	const token = "ghp_verysecretvalue"
+	const token = "ghp_verysecretvalue" // devnest:allow-secret
 
 	machine := newFakeMachine().
 		withEnv("GITHUB_TOKEN", token).

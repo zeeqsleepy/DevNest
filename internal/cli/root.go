@@ -24,6 +24,7 @@ func NewRoot() *Command {
 			newNetworkCommand(),
 			newPortCommand(),
 			newScanCommand(),
+			newSecretCommand(),
 			newSecurityCommand(),
 			newVersionCommand(),
 			newYAMLCommand(),

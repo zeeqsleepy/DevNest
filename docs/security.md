@@ -1,7 +1,6 @@
 # Security
 
-Status: the file-handling, network, secret-handling, process, and removal sections are implemented
-as of Phase 8; the credential-scanning section is still design
+Status: every section is implemented as of Phase 9
 Last revised: 2026-07-24
 
 DevNest deletes files, terminates processes, reads credentials, and makes network requests. Each
@@ -278,10 +277,23 @@ are known good.
 
 DevNest holds no credentials of its own and stores none.
 
-**Scanner output** is redacted always. Enough context to find the finding (file, line, rule name,
-a short masked excerpt) never enough to use it. This holds in every output format, at every
-verbosity, and in exported reports, because reports get attached to tickets and tickets get
-shared.
+**Scanner output** is redacted always: file, line, rule name, and four characters with a length,
+which is enough to recognise which of twelve keys in a file this is and no use to anybody. This
+holds in every output format, at every verbosity, and in exported reports, because reports get
+attached to tickets and tickets get shared.
+
+The guarantee is structural rather than careful. `secret.Finding` has no field holding the matched
+value, so there is nothing downstream for a renderer, an exporter, or a verbose flag to print. The
+redaction happens where the finding is built. A test serialises a whole result to JSON and fails if
+a credential appears anywhere in it, and `devnest secret test` never echoes the value it was handed
+either, because somebody tuning a rule set is testing real credentials as often as not.
+
+**False positives are the failure mode**, and the mitigations are in the rules rather than in
+advice. Every rule carries an entropy floor, including those matching a provider prefix, so a
+placeholder with the right shape and no information does not fire. Fixture directories, lock files,
+and dependency directories are skipped by default. A `devnest:allow-secret` comment silences one
+line. The result is described as candidates, in those words, because a scanner people have learned
+to ignore protects nothing.
 
 **Environment variable display** (`env vars`) masks values whose names match credential patterns
 (`*_TOKEN`, `*_SECRET`, `*_KEY`, `*_PASSWORD`, and similar). The full value is never shown, and
@@ -294,7 +306,15 @@ verification is performed and none is implied.
 happens before a value can reach a log field.
 
 **Test fixtures** containing credential-shaped strings use documented, obviously fake, never-issued
-patterns, so scanning DevNest's own repository does not produce a scare for a contributor.
+patterns, and are assembled from a prefix and a body rather than written out as one literal. That
+is not superstition: a file holding a literal token is flagged by every scanner in the world,
+including this one and including the push protection on the repository it lives in, and a fixture
+that cannot be committed is not a fixture. Where the shape survives anyway, the line carries a
+`devnest:allow-secret` comment.
+
+`devnest secret scan .` over DevNest's own repository reports nothing, which is the state to keep
+it in: a contributor who runs the tool on the tool should not be handed a page of findings to
+learn to ignore.
 
 ## The security module
 
