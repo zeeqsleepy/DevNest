@@ -29,6 +29,14 @@ func TestMain(m *testing.M) {
 }
 
 // sleeper starts a child process and returns its pid.
+//
+// The child is reaped as soon as it exits. On Unix a child that has exited but
+// has not been waited for stays in the process table as a zombie, and a zombie
+// still answers "alive" to the existence check, because the check asks the
+// kernel whether the pid exists and a zombie's does. That is a property of the
+// platform rather than of the code under test: DevNest signals processes it did
+// not start, and those are reaped by init the moment they exit. The test has to
+// play the part of the parent that init would be.
 func sleeper(t *testing.T) int {
 	t.Helper()
 
@@ -39,12 +47,38 @@ func sleeper(t *testing.T) int {
 		t.Fatalf("start a child process: %v", err)
 	}
 
+	reaped := make(chan struct{})
+	go func() {
+		_, _ = command.Process.Wait()
+		close(reaped)
+	}()
+
 	t.Cleanup(func() {
 		_ = command.Process.Kill()
-		_, _ = command.Process.Wait()
+		<-reaped
 	})
 
 	return command.Process.Pid
+}
+
+// settle waits for a pid to disappear from the process table.
+//
+// Termination returns once the process has been signalled and has stopped, but
+// on Unix the pid remains until the parent reaps it, and the reaping here is
+// done by a goroutine. A test asserting that a pid is gone is asserting
+// something that becomes true a moment later, so it waits for that moment
+// rather than racing it.
+func settle(t *testing.T, pid int) {
+	t.Helper()
+
+	deadline := time.Now().Add(5 * time.Second)
+	for time.Now().Before(deadline) {
+		if !(System{}).Alive(pid) {
+			return
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	t.Fatalf("process %d is still in the process table five seconds after it was terminated", pid)
 }
 
 func TestAliveFollowsAProcessThroughItsLife(t *testing.T) {
@@ -57,9 +91,7 @@ func TestAliveFollowsAProcessThroughItsLife(t *testing.T) {
 	if _, err := (System{}).Terminate(context.Background(), pid, TerminateOptions{Force: true}); err != nil {
 		t.Fatalf("Terminate: %v", err)
 	}
-	if (System{}).Alive(pid) {
-		t.Errorf("process %d is still reported as running after being terminated", pid)
-	}
+	settle(t, pid)
 }
 
 func TestAliveRejectsImpossiblePids(t *testing.T) {
@@ -112,6 +144,7 @@ func TestTerminateReportsAProcessThatIsNotThere(t *testing.T) {
 	if _, err := (System{}).Terminate(context.Background(), pid, TerminateOptions{Force: true}); err != nil {
 		t.Fatalf("Terminate: %v", err)
 	}
+	settle(t, pid)
 
 	_, err := (System{}).Terminate(context.Background(), pid, TerminateOptions{Force: true})
 	if err == nil {
@@ -148,9 +181,7 @@ func TestTerminateWithoutForceStopsAtThePoliteRequest(t *testing.T) {
 	if !result.Graceful {
 		t.Error("the process was killed when it had answered the request")
 	}
-	if (System{}).Alive(pid) {
-		t.Error("the process is still running after a graceful termination")
-	}
+	settle(t, pid)
 }
 
 func TestTerminateObservesCancellation(t *testing.T) {

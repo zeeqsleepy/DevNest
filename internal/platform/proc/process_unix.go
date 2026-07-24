@@ -53,6 +53,14 @@ func signal(pid int, which syscall.Signal, format string) error {
 // processAlive asks the kernel whether a pid exists by signalling it with
 // signal zero, which performs the permission and existence checks and delivers
 // nothing. A process owned by another user still answers "exists".
+//
+// One case answers "alive" for something that has already exited: a child of
+// this process that nobody has waited for stays in the process table as a
+// zombie, and a zombie's pid exists. DevNest signals processes it did not
+// start, and those are reaped by init the moment they exit, so the case does
+// not arise in production. It arises in tests, which have to reap their own
+// children, and it is recorded here so that nobody reads the next bug report
+// as a bug in this function.
 func processAlive(pid int) bool {
 	err := syscall.Kill(pid, 0)
 	return err == nil || errors.Is(err, syscall.EPERM)
