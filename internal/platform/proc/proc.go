@@ -52,6 +52,14 @@ type Command struct {
 	Timeout time.Duration
 	// Dir is the working directory. Empty means the current one.
 	Dir string
+	// Limit caps how much of the program's output is kept, in bytes. Zero
+	// means outputLimit, which is sized for a version banner.
+	//
+	// A caller that runs something genuinely chatty, such as git listing every
+	// branch in a large repository, raises it deliberately. The cap exists so
+	// that a program printing megabytes cannot exhaust memory, not to make
+	// large output impossible.
+	Limit int
 }
 
 // Output is what a finished program produced.
@@ -111,8 +119,13 @@ func (s System) Run(ctx context.Context, command Command) (Output, error) {
 	// closes the pipes shortly after the kill and lets Run return.
 	running.WaitDelay = waitDelay
 
+	limit := command.Limit
+	if limit <= 0 {
+		limit = outputLimit
+	}
+
 	var stdout, stderr bytes.Buffer
-	running.Stdout = &limitedWriter{buffer: &stdout, remaining: outputLimit}
+	running.Stdout = &limitedWriter{buffer: &stdout, remaining: limit}
 	running.Stderr = &limitedWriter{buffer: &stderr, remaining: outputLimit}
 
 	started := time.Now()

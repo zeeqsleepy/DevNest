@@ -1,7 +1,7 @@
 # Modules
 
 Status: `core/file`, `core/network`, `core/security`, `core/log`, `core/env`, `core/scan`,
-`core/encoding`, `core/data`, `core/port`, and `core/clean` implemented; `core/git`, `core/secret`,
+`core/encoding`, `core/data`, `core/port`, `core/clean`, and `core/git` implemented; `core/secret`
 and `core/doctor` planned
 Last revised: 2026-07-24
 
@@ -670,10 +670,26 @@ tool.
 
 ---
 
-### `core/git`: repository inspection
+### `core/git`: repository inspection *(implemented)*
 
 **Owns.** Repository summary (branch, remotes, working-tree status, commit count, age), stale
 branch detection, contributor statistics, and a report of the largest objects in history.
+
+**Parsing git.** Every invocation asks for a machine format rather than the human one:
+`for-each-ref` and `log` with an explicit `--format`, `status --porcelain`, `cat-file
+--batch-check`. Fields are joined with the unit separator, 0x1F. A null byte would be the obvious
+choice and cannot be used, because an argument vector is null-terminated and the operating system
+rejects an argument containing one; a tab or a pipe would be wrong because both appear in commit
+subjects. Every call also passes `-c color.ui=false --no-pager`, so a user's own configuration
+cannot colour or paginate output that is about to be parsed.
+
+**Contributors are identified by address**, folded to lower case, because names are spelled several
+ways in every repository of any age. Nothing here discovers anything private: the address is in
+every commit object already.
+
+**`large` walks every object**, which makes it the slowest command in DevNest and the one with the
+longest timeout. Objects unreachable from any ref are left out: they are usually waiting to be
+garbage collected, and a row nobody can act on is noise.
 
 **Implementation choice.** Shells out to the `git` executable rather than embedding a git library.
 The reasoning: any machine that has a repository to inspect has git installed, the CLI is a

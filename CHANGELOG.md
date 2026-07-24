@@ -10,6 +10,30 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: repository inspection
+
+- `devnest git [path]`: what a repository is. Branch, HEAD, remotes, commit and branch and tag
+  counts, the state of the working tree, and how old and how idle the history is. A detached HEAD
+  is named as one, and a repository with no commits is described rather than reported as an error.
+- `devnest git branches [path]`: local branches, most recent activity first, with who touched each
+  one last, how long ago, and whether it has ever been pushed. Anything past the staleness window
+  is flagged and the count is in the result, so one listing answers both questions.
+- `devnest git stale [path]`: the branches nobody has touched for `--days`, default 90. The branch
+  you are standing on is never listed. `--print-commands` adds the git commands that would delete
+  them, printed for you to review and run yourself; they use `branch -d` rather than `-D`, so a
+  command copied without reading it still refuses to throw away unmerged work.
+- `devnest git contributors [path]`: commit counts, shares, and first and last activity by author,
+  with `--since` to narrow the window. People are identified by email address folded to lower case,
+  because names are spelled several ways in every repository of any age.
+- `devnest git large [path]`: the biggest objects anywhere in the history, which is the answer to
+  "why does cloning this take ten minutes". A file deleted two years ago still costs every clone
+  what it weighed and appears in no listing of the working tree.
+
+Every command in the group is read-only, and a test asserts it: the fake git records each
+invocation and fails the build if any of them is a subcommand that can write. The commands ask git
+for machine formats rather than parsing the human ones, and pass `-c color.ui=false --no-pager` so
+that a user's own configuration cannot change what gets parsed.
+
 ### Added: ports and cleanup
 
 - `devnest port list`: every listening socket with the process that owns it, and how reachable each

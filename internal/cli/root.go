@@ -17,6 +17,7 @@ func NewRoot() *Command {
 			newEncodeCommand(),
 			newEnvCommand(),
 			newFileCommand(),
+			newGitCommand(),
 			newHelpCommand(),
 			newJSONCommand(),
 			newLogCommand(),

@@ -1023,3 +1023,100 @@ func TestPortAndCleanGroupHelp(t *testing.T) {
 		}
 	}
 }
+
+// The git commands run against this repository, which is the one repository a
+// test can be certain exists. What is asserted is the shape of the answer, not
+// its content: commit counts change with every commit.
+func TestGitSummarisesThisRepository(t *testing.T) {
+	got := runBinary(t, "git", moduleRoot(t))
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+
+	for _, want := range []string{"repository", "branch", "commits", "working tree"} {
+		if !strings.Contains(got.stdout, want) {
+			t.Errorf("stdout does not mention %q:\n%s", want, got.stdout)
+		}
+	}
+}
+
+func TestGitSubcommandsRun(t *testing.T) {
+	root := moduleRoot(t)
+
+	cases := map[string][]string{
+		"branches":     {"git", "branches", root},
+		"stale":        {"git", "stale", root, "--days", "3650"},
+		"contributors": {"git", "contributors", root, "--limit", "5"},
+		"large":        {"git", "large", root, "--limit", "3"},
+	}
+
+	for name, args := range cases {
+		t.Run(name, func(t *testing.T) {
+			got := runBinary(t, args...)
+			if got.exitCode != 0 {
+				t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+			}
+			if strings.TrimSpace(got.stdout) == "" {
+				t.Error("stdout is empty")
+			}
+		})
+	}
+}
+
+// The module's central promise, checked from outside: a git command leaves the
+// repository exactly as it found it.
+func TestGitChangesNothing(t *testing.T) {
+	root := moduleRoot(t)
+
+	before := gitStatus(t, root)
+	for _, args := range [][]string{
+		{"git", root},
+		{"git", "branches", root},
+		{"git", "stale", root, "--print-commands"},
+		{"git", "contributors", root},
+	} {
+		if got := runBinary(t, args...); got.exitCode != 0 {
+			t.Fatalf("%v exited %d\nstderr: %s", args, got.exitCode, got.stderr)
+		}
+	}
+
+	if after := gitStatus(t, root); after != before {
+		t.Errorf("the working tree changed:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+}
+
+func gitStatus(t *testing.T, root string) string {
+	t.Helper()
+
+	command := exec.Command("git", "-C", root, "status", "--porcelain")
+	var stdout bytes.Buffer
+	command.Stdout = &stdout
+
+	if err := command.Run(); err != nil {
+		t.Skipf("git is not available: %v", err)
+	}
+	return stdout.String()
+}
+
+func TestGitRejectsSomethingThatIsNotARepository(t *testing.T) {
+	got := runBinary(t, "git", t.TempDir())
+
+	if got.exitCode != 2 {
+		t.Errorf("exit code = %d, want 2\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if !strings.Contains(got.stderr, "repository") {
+		t.Errorf("stderr = %q, want it to say why", got.stderr)
+	}
+}
+
+func TestGitGroupHelp(t *testing.T) {
+	got := runBinary(t, "git", "help")
+	if got.exitCode != 0 {
+		t.Fatalf("git help exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	for _, name := range []string{"branches", "stale", "contributors", "large"} {
+		if !strings.Contains(got.stdout, name) {
+			t.Errorf("git help does not list %q:\n%s", name, got.stdout)
+		}
+	}
+}
