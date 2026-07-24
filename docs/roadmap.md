@@ -290,7 +290,9 @@ Decisions worth carrying forward, recorded in `modules.md` and `security.md`:
 - Documentation pass across everything, with all examples tested. *(in progress: every `devnest`
   line in the documentation is now checked against the real binary by a test, which is what
   found the missing `config` group, three renamed commands, and a flag that never existed.)*
-- A full benchmark run against `performance.md`, with baselines committed.
+- A full benchmark run against `performance.md`, with baselines committed. *(done: every target
+  has a benchmark, the numbers are in `performance.md`, and `benchmarks/baseline.txt` is the
+  committed baseline.)*
 
 **1.0 means the compatibility promise starts.** Command names, flag names, JSON field names, and
 exit codes are frozen for the major version. It is not declared until the surface has been used

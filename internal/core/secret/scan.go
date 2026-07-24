@@ -128,6 +128,11 @@ func Scan(ctx context.Context, reader Reader, request ScanRequest) (ScanResult, 
 		Exclude:        exclude,
 	}
 
+	// One line buffer for the whole walk. A buffer per file cost 64 KiB of
+	// allocation for every file scanned, which over ten thousand files was
+	// more than half a gigabyte to read a few megabytes.
+	buffer := make([]byte, maxLineBytes)
+
 	err = reader.Walk(ctx, walk, func(file fs.Entry) error {
 		if file.IsDir || file.IsSymlink {
 			return nil
@@ -137,7 +142,7 @@ func Scan(ctx context.Context, reader Reader, request ScanRequest) (ScanResult, 
 			return nil
 		}
 
-		findings, suppressedHere, scanned, err := scanFile(ctx, reader, resolved, file, active, request.Entropy)
+		findings, suppressedHere, scanned, err := scanFile(ctx, reader, resolved, file, active, request.Entropy, buffer)
 		if err != nil {
 			return err
 		}
@@ -182,7 +187,8 @@ func finish(result *ScanResult) {
 //
 // The third return value says whether the file was examined at all: a binary
 // file is skipped, and a skipped file is not a clean file.
-func scanFile(ctx context.Context, reader Reader, root string, file fs.Entry, active []Rule, floor float64) ([]Finding, int, bool, error) {
+func scanFile(ctx context.Context, reader Reader, root string, file fs.Entry, active []Rule,
+	floor float64, buffer []byte) ([]Finding, int, bool, error) {
 	handle, err := reader.Open(file.Path)
 	if err != nil {
 		// A file that cannot be read is not a failed scan. Permissions vary,
@@ -198,7 +204,7 @@ func scanFile(ctx context.Context, reader Reader, root string, file fs.Entry, ac
 	}
 
 	scanner := bufio.NewScanner(handle)
-	scanner.Buffer(make([]byte, 0, 64*1024), maxLineBytes)
+	scanner.Buffer(buffer, maxLineBytes)
 
 	findings := make([]Finding, 0, 4)
 	suppressedCount := 0

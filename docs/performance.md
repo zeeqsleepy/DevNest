@@ -1,7 +1,8 @@
 # Performance
 
-Status: targets are the plan; the log figures below are measured
-Last revised: 2026-07-24
+Status: every target below has a benchmark behind it as of Phase 10; the measured figures and the
+committed baseline are in `benchmarks/baseline.txt`
+Last revised: 2026-07-25
 
 Speed is a feature here, not a nicety. A utility that answers a trivial question in two seconds
 stops being used, whatever its capabilities. The targets below are the difference between a tool
@@ -9,8 +10,9 @@ that becomes a habit and one that gets uninstalled.
 
 ## Targets
 
-Measured on a mid-range 2023 laptop (8 cores, NVMe storage, 16 GB RAM) as a reference machine,
-not a minimum requirement.
+Written against a mid-range 2023 laptop (8 cores, NVMe storage, 16 GB RAM) as a reference machine,
+not a minimum requirement. The measured figures below come from a different machine, recorded in
+`benchmarks/baseline.txt`, so the two are close but not directly comparable.
 
 | Operation | Target | Ceiling |
 |---|---|---|
@@ -59,6 +61,16 @@ Rules that keep it that way:
 A startup benchmark runs in CI. It is the one performance number worth watching per-commit,
 because startup cost creeps in one import at a time and nobody notices until it is 200 ms.
 
+### Measured
+
+| Benchmark | Time | Allocations | Target |
+|---|---|---|---|
+| `devnest version`, whole process | 10.1 ms | 274 | 30 ms |
+
+That figure is the process: fork, load, resolve configuration, render, exit. Roughly two thirds of
+it is Windows starting a process at all, which is why the number is measured by running the binary
+rather than by calling a function.
+
 ## Filesystem work
 
 Four modules walk trees, and one shared walker in `platform/fs` does it for all of them.
@@ -77,6 +89,45 @@ Four modules walk trees, and one shared walker in `platform/fs` does it for all 
   independent of file size, always.
 - **Results sorted once at the end.** Determinism is required for diffable reports; sorting during
   the walk costs more and buys nothing.
+
+### Measured
+
+Over a generated 10,000 file project tree: source files in forty directories, a `node_modules` with
+a thousand files, and build output under `dist`.
+
+| Benchmark | Time | Allocations | Target |
+|---|---|---|---|
+| `clean` enumeration | 10.4 ms | 42,241 | 400 ms |
+| `scan` structural summary | 176 ms | 68,680 | 500 ms |
+| `scan types` | 177 ms | 51,720 | 500 ms |
+| `scan lines` | 4.65 s | 77,181 | — |
+| `secret scan` | 4.53 s | 161,841 | 3 s |
+| *standard library walk and read, no DevNest* | 5.53 s | 62,592 | — |
+
+The last row is the point of the table. The three fast operations never open a file; the two slow
+ones read every file they do not skip, and both are **faster than a plain `filepath.WalkDir` that
+opens and reads the same tree**. Per-file open cost on this machine is around 400 microseconds with
+Defender's real-time protection enabled, and no amount of work inside DevNest moves it. The
+`secret scan` target of 3 seconds was written before that was measured; the honest reading is that
+it is a target for a machine whose filesystem is not doing that, and the baseline row is what a
+regression should be judged against.
+
+Measuring this is what found a real defect: `secret scan` allocated a fresh 64 KiB line buffer for
+every file, 579 MB over ten thousand of them. One buffer for the whole walk took it to 22 MB.
+
+### Digests
+
+Over a 64 MB file. The gigabyte target scales from the throughput rather than being measured
+directly, because a benchmark should not ask a developer's disk for a gigabyte of scratch space.
+
+| Benchmark | Throughput | Allocations | 1 GB implies | Target |
+|---|---|---|---|---|
+| SHA-256 | 1,620 MB/s | 86 | 0.6 s | 2 s |
+| SHA-256 + SHA-512 + MD5, one pass | 350 MB/s | 95 | 2.9 s | — |
+
+Three digests cost one read and three hash computations, which is what the shared digest helper
+exists to provide. Allocation is flat in both: the file is streamed through a fixed buffer, so a
+10 GB file allocates what a 64 MB one does.
 
 ## Reading a log file
 
@@ -110,11 +161,14 @@ for work dominated by reading the file.
 
 | Benchmark | Time | Throughput | Allocations |
 |---|---|---|---|
-| `log analyze` | 7.8 ms | 2,678 MB/s | 79 |
-| `log stats` | 9.6 ms | 2,169 MB/s | 114 |
-| `log search` | 17.8 ms | 1,178 MB/s | 181 |
-| `log errors` | 44.2 ms | 473 MB/s | 2,163 |
-| `log http` | 57.1 ms | 367 MB/s | 1,273 |
+| `log analyze` | 7.1 ms | 2,946 MB/s | 79 |
+| `log stats` | 7.6 ms | 2,747 MB/s | 114 |
+| `log search` | 16.8 ms | 1,243 MB/s | 181 |
+| `log errors` | 41.8 ms | 501 MB/s | 2,165 |
+| `log http` | 56.6 ms | 370 MB/s | 1,273 |
+
+A 100 MB log is five times this file, so `log analyze` implies 34 ms and `log http` 4.7 s against
+targets of 500 ms and 3 s. The first has room to spare; the second is the one to watch.
 
 The allocation counts are per run over the whole file, not per line, and that is the point: they do
 not move when the file gets larger, only when it holds more distinct values. `log http` was 800,141
@@ -162,6 +216,28 @@ walking, multi-file hashing, and probing toolchains in `env`.
 - **Return values, not pointers,** for small structs. Pointer-chasing costs more than copying 32
   bytes, and heap allocation costs more than both.
 
+## Documents
+
+`data` is the module that holds its input in memory and says so, with a 64 MiB limit. What that
+costs is worth stating rather than implying.
+
+### Measured
+
+Over a generated 10 MB JSON document: an array of objects with nested fields, which is the shape an
+API response has.
+
+| Benchmark | Time | Throughput | Allocations | Target |
+|---|---|---|---|---|
+| `json format` | 222 ms | 47 MB/s | 2,396,796 | 300 ms |
+| `json minify` | 193 ms | 54 MB/s | 2,396,793 | — |
+| `json query` | 145 ms | 72 MB/s | 2,396,797 | — |
+
+Inside the target, and the allocation figure is the honest part: 2.4 million allocations and 211 MB
+of transient memory to reprint 10 MB. That is `encoding/json` decoding into `any`, which allocates
+per value. It is a known cost of the approach rather than a defect, and the size limit is what keeps
+it bounded. A streaming reprinter would fix it and is not worth writing until somebody formats a
+document large enough to care.
+
 ## Output
 
 Rendering is not free at scale: a table with 50,000 rows can take longer to format than the scan
@@ -181,7 +257,8 @@ before-and-after number does not get merged. Intuition about Go performance is w
 that the rule pays for itself.
 
 Benchmarks live in `benchmarks/` with committed baselines annotated with the hardware they were
-measured on. Profiling uses the standard toolchain: `pprof` for CPU and memory, `-benchmem` for
+measured on: `benchmarks/baseline.txt` is the current one, regenerated wholesale with
+`go test -run='^$' -bench=. -benchmem -count=1 ./benchmarks/` rather than edited by hand. Profiling uses the standard toolchain: `pprof` for CPU and memory, `-benchmem` for
 allocation counts, and the execution tracer when a problem looks like contention rather than
 throughput.
 

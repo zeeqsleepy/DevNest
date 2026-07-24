@@ -1,0 +1,37 @@
+# DevNest benchmark baseline
+#
+# Hardware: AMD Ryzen 5 5500 (6 cores, 12 threads), 16 GB RAM, NVMe SSD,
+#           Windows 11 Pro 26200, Go 1.26.2, Microsoft Defender real-time
+#           protection enabled.
+# Command:  go test -run='^$' -bench=. -benchmem -count=1 ./benchmarks/
+# Measured: 2026-07-25
+#
+# Regenerate with the command above and replace this file wholesale. A number
+# here is a baseline, not a target: the targets live in docs/performance.md and
+# a regression beyond 20% against this file is what opens an issue.
+#
+# The tree benchmarks run over a generated 10,000 file project; the log
+# benchmarks over a generated 200,000 line access log; the document benchmarks
+# over a generated 10 MB JSON document; the digest benchmarks over a 64 MB file.
+#
+goos: windows
+goarch: amd64
+pkg: github.com/devnest/devnest/benchmarks
+cpu: AMD Ryzen 5 5500                               
+BenchmarkJSONFormat-12             	       5	 221562120 ns/op	  47.33 MB/s	210997576 B/op	 2396796 allocs/op
+BenchmarkJSONMinify-12             	       6	 193225933 ns/op	  54.27 MB/s	171224960 B/op	 2396793 allocs/op
+BenchmarkJSONQuery-12              	       7	 145088029 ns/op	  72.27 MB/s	150236117 B/op	 2396797 allocs/op
+BenchmarkHashSHA256-12             	      28	  41413979 ns/op	1620.44 MB/s	  268021 B/op	      86 allocs/op
+BenchmarkHashThreeAlgorithms-12    	       6	 191682817 ns/op	 350.10 MB/s	  269157 B/op	      95 allocs/op
+BenchmarkLogAnalyze-12             	     165	   7102312 ns/op	2946.19 MB/s	  267835 B/op	      79 allocs/op
+BenchmarkLogHTTPSummary-12         	      20	  56624345 ns/op	 369.54 MB/s	  363365 B/op	    1273 allocs/op
+BenchmarkLogErrors-12              	      27	  41798385 ns/op	 500.61 MB/s	  467405 B/op	    2165 allocs/op
+BenchmarkLogSearch-12              	      68	  16835600 ns/op	1242.89 MB/s	  286207 B/op	     181 allocs/op
+BenchmarkLogStats-12               	     148	   7616125 ns/op	2747.43 MB/s	  271956 B/op	     114 allocs/op
+BenchmarkStartupVersion-12         	     114	  10081344 ns/op	   35521 B/op	     274 allocs/op
+BenchmarkScanSummary-12            	       6	 175729383 ns/op	 6259248 B/op	   68680 allocs/op
+BenchmarkScanTypes-12              	       6	 177331100 ns/op	 5566498 B/op	   51720 allocs/op
+BenchmarkScanLines-12              	       1	4653017200 ns/op	 9372592 B/op	   77181 allocs/op
+BenchmarkCleanScan-12              	     111	  10385195 ns/op	 4250357 B/op	   42241 allocs/op
+BenchmarkSecretScan-12             	       1	4531585100 ns/op	22673128 B/op	  161841 allocs/op
+BenchmarkTreeReadBaseline-12       	       1	5529550500 ns/op	 7642856 B/op	   62592 allocs/op
