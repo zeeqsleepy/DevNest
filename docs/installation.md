@@ -1,7 +1,7 @@
 # Installation
 
-Status: current as of 0.1.0. The archives, the `.deb`, the `.rpm`, and building from source all
-work today; winget and Homebrew are generated with each release but not submitted yet
+Status: current as of 0.1.0. The archives, the `.deb`, the `.rpm`, the Homebrew tap, and building
+from source all work today; winget is generated with each release but not submitted yet
 Last revised: 2026-07-25
 
 DevNest is a single executable with no runtime dependency. Every method below results in the same
@@ -48,13 +48,16 @@ is for. The binary needs no installer, no elevation, and no runtime.
 
 ### Homebrew
 
-*Not published yet.* DevNest cannot go into Homebrew core, which requires an OSI-approved licence
-that the Commons Clause rules out, so it will live in a self-hosted tap:
+DevNest cannot go into Homebrew core, which requires an OSI-approved licence that the Commons
+Clause rules out, so it lives in a self-hosted tap:
 
 ```bash
 brew tap zeeqsleepy/devnest
 brew install --cask devnest
 ```
+
+The cask clears the quarantine attribute for you, so the Gatekeeper step below applies only to a
+manual download.
 
 ### Manual
 

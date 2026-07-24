@@ -84,25 +84,15 @@ checksum:
 snapshot:
   version_template: "{{ incpatch .Version }}-snapshot"
 
+# The release notes come from CHANGELOG.md, extracted by
+# scripts/release-notes.sh and passed to GoReleaser with --release-notes. The
+# changelog is written by a person and is what anybody would want to read; the
+# generated alternative repeats the commit subjects and prints every author's
+# email address onto a public page.
+#
+# This block is the fallback for a release built without those notes.
 changelog:
-  # The changelog people read is CHANGELOG.md, written by a person. This one
-  # only groups the commits, for anybody who wants the detail behind an entry.
-  use: github
-  sort: asc
-  groups:
-    - title: Features
-      regexp: '^feat'
-      order: 0
-    - title: Fixes
-      regexp: '^(fix|perf)'
-      order: 1
-    - title: Everything else
-      order: 2
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
-      - '^chore:'
+  use: github-native
 
 # The Homebrew tap is self-hosted for the same licence reason as the
 # distribution repositories: Homebrew core requires an OSI-approved licence.

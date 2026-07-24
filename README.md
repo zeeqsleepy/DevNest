@@ -90,8 +90,13 @@ output. The security module has no logger at all, which is the surest way to kee
 
 ## Installing
 
-Download the archive for your platform from the
-[releases page](https://github.com/zeeqsleepy/DevNest/releases), or on Linux take the `.deb` or the
+```bash
+brew tap zeeqsleepy/devnest
+brew install --cask devnest
+```
+
+Or download the archive for your platform from the
+[releases page](https://github.com/zeeqsleepy/DevNest/releases); on Linux there is a `.deb` and an
 `.rpm`. Extract, put the binary on PATH, done. Checksum verification and shell completion setup are
 in [docs/installation.md](docs/installation.md).
 
@@ -99,7 +104,7 @@ in [docs/installation.md](docs/installation.md).
 
 | | |
 |---|---|
-| winget, Homebrew | The manifests are generated with every release; submitting them is the missing step |
+| winget | The manifest is generated with every release; submitting it is the missing step |
 | `devnest init` | Project scaffolding from templates, deliberately deferred past 1.0 |
 | 1.0 | The compatibility promise, once the surface has been used enough to freeze it |
 

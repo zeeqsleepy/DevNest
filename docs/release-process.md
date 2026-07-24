@@ -138,7 +138,9 @@ failure there means deleting the release, which costs nothing before anybody has
 
 - One archive per platform and architecture: `.zip` for Windows, `.tar.gz` for Linux and macOS.
 - `checksums.txt` with SHA-256 for every artifact.
-- Release notes generated from the changelog section for this version.
+- Release notes taken from the changelog section for this version, extracted by
+  `scripts/release-notes.sh`. Not generated from the commit list: that repeats what the commits
+  already say and puts every author's email address on a public page.
 
 **Package channels:**
 
@@ -148,9 +150,17 @@ failure there means deleting the release, which costs nothing before anybody has
   target exists: turning them on is one field each, described below.
 - `go install` works directly from the tag with no extra step.
 
-**Turning on the Homebrew tap:** create `zeeqsleepy/homebrew-devnest`, add a token with write
-access to it as the `HOMEBREW_TAP_TOKEN` secret, and set `skip_upload: false` under
-`homebrew_casks`. The tap is self-hosted rather than in Homebrew core for the same reason the
+**The Homebrew tap** is `zeeqsleepy/homebrew-devnest`, created with 0.1.0 and updated by hand for
+now:
+
+```bash
+brew tap zeeqsleepy/devnest
+brew install --cask devnest
+```
+
+To have each release update it automatically, add a token with write access to that repository as
+the `HOMEBREW_TAP_TOKEN` secret and set `skip_upload: false` under `homebrew_casks`. Until then,
+copy the `devnest.rb` attached to the release into `Casks/` in the tap. The tap is self-hosted rather than in Homebrew core for the same reason the
 Linux distribution repositories are out: both require an OSI-approved licence, and the Commons
 Clause means DevNest's is not one.
 
