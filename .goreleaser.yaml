@@ -153,8 +153,9 @@ release:
   github:
     owner: zeeqsleepy
     name: DevNest
-  # A pre-1.0 tag is a pre-release, because 1.0 is where the compatibility
-  # promise starts and nothing before it should look like a stable version.
+  # "auto" marks a release as a pre-release when the tag carries a suffix such
+  # as -rc1 or -beta. A plain v0.x tag is a normal release: the version number
+  # already says the surface is unstable, and GitHub's flag is for candidates.
   prerelease: auto
   draft: false
   extra_files:
