@@ -10,6 +10,20 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Changed: the licence is now MIT
+
+DevNest is MIT licensed, replacing the Apache License 2.0 with the Commons Clause that 0.1.0 went
+out under. Use it, change it, redistribute it, sell it, put it in a paid product: keep the copyright
+notice and there are no other conditions.
+
+The Commons Clause withheld the right to sell, which made DevNest source-available rather than open
+source under the OSI definition. That restriction bought nothing. It kept the project out of
+Homebrew core and the Linux distribution repositories, and out of reach of anyone who will only
+contribute to something open source, in exchange for protecting a commercial plan that does not
+exist.
+
+A copy taken under the old terms keeps them. Everything from here is MIT.
+
 ### Changed: credential scanning skips generated build output
 
 `.next`, `.nuxt`, `.svelte-kit`, `.output`, `.angular`, `.parcel-cache`, `.turbo`, `.cache`,
