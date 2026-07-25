@@ -94,11 +94,13 @@ The full annotated default lives in `configs/config.example.toml`, and a test lo
 run to confirm it still parses and still matches the compiled defaults. An example that has drifted
 teaches the wrong thing to exactly the people least able to notice.
 
-`[general]`, `[scan]`, `[security]`, `[network]`, `[clean]`, and `[secret]` have consumers today.
-`[export]` is loaded, type-checked, and validated but applied by nothing: the working controls are
-`--export` and `--export-format` at the call site. It is listed here as what it is rather than
-described as working, because a key that is quietly ignored is worse than a key that does not
-exist.
+Every section has a consumer: `[general]`, `[scan]`, `[security]`, `[network]`, `[clean]`,
+`[secret]`, and `[export]`.
+
+`export.directory` takes effect when `--export` is given a bare filename, which then lands there
+instead of in the working directory; a path with a directory in it is used exactly as typed,
+because somebody who typed a location meant it. `export.timestamp_files` inserts the moment before
+the extension, so a command run twice leaves two reports rather than one overwritten one.
 
 `secret.entropy_threshold` sets the floor for the scanning rules that match by shape, and `--entropy`
 overrides it for one run. Neither touches the rules that match a provider's prefix: raising the
