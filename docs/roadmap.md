@@ -335,7 +335,9 @@ it well means a template ecosystem, and doing it badly means another mediocre ge
 
 **Project-local configuration.** Currently excluded on purpose; see `configuration.md`. If real
 usage shows a narrow set of keys that genuinely belong per-project, a `.devnest.toml` limited to
-those keys (never the safety-relevant ones) becomes reasonable.
+those keys (never the safety-relevant ones) becomes reasonable. **`clean` is not among them**, and
+that is settled rather than pending: a file that travels with a clone must never widen what a
+delete command will remove. The reasoning is in `modules.md`.
 
 **Scan comparison.** Diff two scans to show growth over time. Useful for tracking a repository
 that keeps getting bigger and nobody knows why.

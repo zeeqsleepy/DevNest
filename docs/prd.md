@@ -152,5 +152,13 @@ Decided:
   history and can wait minutes for it. Making history the default would put that wait into every
   commit, and a hook people disable protects nothing.
 
-Still carried:
-- Does `devnest clean` need a project-local allow list file, or is a global config sufficient?
+- **Whether `devnest clean` needs a project-local allow list file**: it does not, and it is not
+  getting one. Such a file would be a file inside a tree, arriving with a clone, widening what a
+  delete command is willing to remove. Nobody reads it before running `devnest clean`, and a
+  repository that carries one has been handed a say in what gets deleted from the machine that
+  checked it out. The three legitimate needs it would serve are already served in the open:
+  `--pattern` and `--protect` at the call site, where they are visible in the command that ran, and
+  `clean.patterns` and `clean.protect` in the user's own configuration, which the user wrote. Both
+  stay subject to the marker rule and neither can lift the root and home directory refusal.
+
+Nothing is carried. Every question opened during the phases has been answered.

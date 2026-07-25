@@ -505,6 +505,13 @@ repositories and deleting it breaks an offline build. Nor is anything outside th
 named, such as `~/.npm` or `~/.cargo`. A tool that reaches into a home directory to free space is
 a different and more dangerous tool.
 
+Nor is a project-local allow list file, which was an open question in `prd.md` and is now closed.
+It would be a file inside the tree, arriving with a clone, widening what a delete command will
+remove: a repository would get a say in what is deleted from the machine that checked it out, and
+nobody reads a repository's dotfiles before running `clean` on it. What it would have been for is
+already available where it can be seen: `--pattern` and `--protect` at the call site, and
+`clean.patterns` and `clean.protect` in the user's own configuration.
+
 **Depends on.** `platform/fs`.
 
 **Later.** Age filters (`--older-than 30d`). Recursive multi-project mode for cleaning an entire

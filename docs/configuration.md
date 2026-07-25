@@ -55,7 +55,8 @@ and most users never create one.
 walking up from the working directory means the same command behaves differently in different
 directories, which is confusing when it works and dangerous when the command deletes things.
 Project-specific behaviour is expressed with flags, which are visible at the call site. This may be
-revisited for a narrow set of keys if real usage demands it; see `roadmap.md`.
+revisited for a narrow set of keys if real usage demands it, never including the `[clean]` keys; a
+file that arrives with a clone must not widen what a delete command will remove. See `roadmap.md`.
 
 ## Format
 
