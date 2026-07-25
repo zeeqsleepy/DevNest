@@ -147,36 +147,44 @@ failure there means deleting the release, which costs nothing before anybody has
 **Package channels:**
 
 - `.deb` and `.rpm` for amd64 and arm64, built and published with the release.
-- The winget manifests and the Homebrew cask are generated and attached to the release, but not
-  submitted automatically yet. Both target repositories now exist — the tap at
-  `zeeqsleepy/homebrew-devnest` and a fork of `microsoft/winget-pkgs` at `zeeqsleepy/winget-pkgs`.
-  What is still missing is a token for each, which is why both publishers remain switched off in
-  `.goreleaser.yaml`: the workflow falls back to `github.token`, which is scoped to this repository
-  and cannot write to either target, so turning a publisher on before its secret exists fails the
-  release halfway through publishing.
+- The Homebrew cask is committed to the tap at `zeeqsleepy/homebrew-devnest` by the release itself.
+- The winget manifests are pushed to `zeeqsleepy/winget-pkgs`, a fork of `microsoft/winget-pkgs`,
+  as a `devnest-<version>` branch. **The pull request upstream is opened by hand**, which keeps one
+  point where a person reads the manifest before it reaches a package manager on other people's
+  machines.
+- Both are also attached to the release as files, which is what makes a bad push recoverable
+  without waiting for another tag.
 - `go install` works directly from the tag with no extra step.
 
-**The Homebrew tap** is `zeeqsleepy/homebrew-devnest`, created with 0.1.0 and updated by hand for
-now. It exists because Homebrew core requires a package to be notable — thirty stars, thirty forks,
-or seventy-five watchers, and thirty days of maintenance — and DevNest has none of that yet. The
-licence is no longer the obstacle it was: MIT qualifies, so core and the Linux distribution
-repositories are both open once the bar is cleared.
+**The Homebrew tap** is `zeeqsleepy/homebrew-devnest`, created with 0.1.0 and updated by the
+release since 2026-07-25. It exists because Homebrew core requires a package to be notable — thirty
+stars, thirty forks, or seventy-five watchers, and thirty days of maintenance — and DevNest has
+none of that yet. The licence is no longer the obstacle it was: MIT qualifies, so core and the
+Linux distribution repositories are both open once the bar is cleared.
 
 ```bash
 brew tap zeeqsleepy/devnest
 brew install --cask devnest
 ```
 
-To have each release update it automatically, add a fine-grained token with **Contents: read and
-write** on that repository as the `HOMEBREW_TAP_TOKEN` secret, then set `skip_upload: false` under
-`homebrew_casks`. Until then, copy the `devnest.rb` attached to the release into `Casks/` in the
-tap.
+**The secrets both publishers need.** `HOMEBREW_TAP_TOKEN` and `WINGET_TOKEN`, set on this
+repository, each a fine-grained token scoped to one target repository with **Contents: read and
+write** and nothing else. Neither can touch DevNest itself, so a compromised release run cannot
+rewrite the source it was built from.
 
-**Turning on winget:** the fork is `zeeqsleepy/winget-pkgs`, created 2026-07-25. Add a fine-grained
-token with **Contents: read and write** on it as the `WINGET_TOKEN` secret, then set
-`skip_upload: false` under `winget`. Each release then pushes a `devnest-<version>` branch to the
-fork; the pull request to `microsoft/winget-pkgs` is opened by hand, which is where the manifest
-gets read by a person before it reaches a package manager on other people's machines.
+Both are dated. A token expires, and the release that discovers it is the one that fails after
+publishing the archives: the artifacts are on the release page and the package channels are a
+version behind. Renewing is `gh secret set <NAME> --repo zeeqsleepy/DevNest`, and re-running the
+release workflow on the tag republishes to the channels that failed.
+
+**Winget submission stays manual.** Each release pushes a `devnest-<version>` branch to the fork;
+the pull request to `microsoft/winget-pkgs` is opened by hand. That is the last point where a
+person reads the manifest before a package manager installs it on other people's machines, and it
+costs one pull request per release.
+
+**Rolling either back** is `skip_upload: true` on the publisher in `.goreleaser.yaml`. The cask and
+the manifests keep being generated and attached to the release, so a channel can be updated by hand
+while whatever went wrong is fixed.
 
 Set either secret with `gh secret set <NAME> --repo zeeqsleepy/DevNest`, which reads the value
 without putting it in shell history.

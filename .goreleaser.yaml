@@ -114,11 +114,10 @@ changelog:
 # package to be notable first (stars, forks, watchers, and thirty days of
 # maintenance) and DevNest is not there yet.
 #
-# The tap repository exists. Uploading stays off until HOMEBREW_TAP_TOKEN is in
-# the release secrets: the workflow falls back to github.token, which cannot
-# write to another repository, so switching this on early fails a release
-# halfway through publishing. The cask is generated and attached to the release
-# either way, so it can be copied across by hand. See docs/release-process.md.
+# Uploading is on: HOMEBREW_TAP_TOKEN reaches the tap with write access to its
+# contents and nothing else. Each release commits the cask, so the tap stops
+# being a manual copy. The cask is still attached to the release as well, which
+# is what makes a bad push recoverable by hand. See docs/release-process.md.
 homebrew_casks:
   - name: devnest
     ids: [devnest]
@@ -128,7 +127,7 @@ homebrew_casks:
       token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: https://github.com/zeeqsleepy/DevNest
     description: Single-binary developer toolkit for files, networks, logs, and secrets
-    skip_upload: true
+    skip_upload: false
     hooks:
       post:
         # macOS quarantines anything downloaded that Apple has not notarised,
@@ -139,9 +138,11 @@ homebrew_casks:
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/devnest"]
           end
 
-# The winget manifest is generated and uploaded with the release. The fork of
-# microsoft/winget-pkgs exists; publishing stays off until WINGET_TOKEN is in
-# the release secrets, for the same reason as the tap above.
+# The winget manifest is generated and uploaded with the release, and now also
+# pushed to the fork of microsoft/winget-pkgs as a branch per version. The pull
+# request upstream is opened by hand: that is the last point where a person
+# reads the manifest before it reaches other people's machines, and it is worth
+# keeping.
 winget:
   - name: DevNest
     publisher: zeeqsleepy
@@ -150,7 +151,7 @@ winget:
     homepage: https://github.com/zeeqsleepy/DevNest
     publisher_url: https://github.com/zeeqsleepy
     package_identifier: zeeqsleepy.DevNest
-    skip_upload: true
+    skip_upload: false
     repository:
       owner: zeeqsleepy
       name: winget-pkgs
