@@ -49,10 +49,16 @@ type Clean struct {
 }
 
 // Secret configures credential scanning.
+//
+// There is deliberately no key for user-supplied rules. A rule is a name, a
+// severity, an entropy floor, and a pattern with a capture group, and this
+// file's format holds flat sections of scalars and string lists: a rule cannot
+// be written here without either losing the fields that make it usable or
+// teaching the decoder arrays of tables, which it refuses on purpose. If custom
+// rules are ever built they get their own file and their own format.
 type Secret struct {
 	EntropyThreshold float64  `json:"entropyThreshold"`
 	ExcludePaths     []string `json:"excludePaths"`
-	CustomRules      []string `json:"customRules"`
 }
 
 // Security configures the defaults for generated passwords.
@@ -110,7 +116,6 @@ func Default() Config {
 		Secret: Secret{
 			EntropyThreshold: 4.5,
 			ExcludePaths:     []string{"testdata/", "fixtures/", "*.lock"},
-			CustomRules:      []string{},
 		},
 		Security: Security{
 			PasswordLength:           20,

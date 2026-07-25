@@ -51,7 +51,6 @@ require_confirm = true
 [secret]
 entropy_threshold = 4.5                    # 0 to 8; raise it to reduce false positives
 exclude_paths     = ["testdata/", "fixtures/", "*.lock"]
-custom_rules      = []
 
 # Defaults for generated passwords. Nothing secret is stored here and nothing
 # ever will be: these describe the shape of a password, not a password.

@@ -10,6 +10,21 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Removed: the `secret.custom_rules` configuration key
+
+The key was loaded and read by nothing. Somebody adding their organisation's token format to it got
+a scan that reported nothing and a reasonable belief that the tree was clean, which is the one
+failure mode a credential scanner must not have.
+
+It was in the wrong place to begin with. A rule is a name, a severity, an entropy floor, and a
+pattern with a capture group naming the part that is the credential; the configuration file holds
+flat sections of scalars and string lists and rejects arrays of tables on purpose. A bare list of
+patterns would have produced findings with no name to select or exclude them by, one fixed
+severity, and no floor of their own.
+
+An existing configuration file that sets the key keeps working: an unknown key is a warning, never
+an error. `devnest secret rules` remains the whole surface of what a scan can find.
+
 ### Changed: the licence is now MIT
 
 DevNest is MIT licensed, replacing the Apache License 2.0 with the Commons Clause that 0.1.0 went

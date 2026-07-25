@@ -94,9 +94,17 @@ The full annotated default lives in `configs/config.example.toml`, and a test lo
 run to confirm it still parses and still matches the compiled defaults. An example that has drifted
 teaches the wrong thing to exactly the people least able to notice.
 
-`[general]`, `[scan]`, `[security]`, `[network]`, and `[clean]` have consumers today. `[secret]`
-and `[export]` are loaded, type-checked, and validated so that a configuration file written today
-keeps working, and so the modules that read them in later phases need no loader changes.
+`[general]`, `[scan]`, `[security]`, `[network]`, and `[clean]` have consumers today, and so does
+`secret.exclude_paths`. Two things are loaded, type-checked, and validated but not yet applied by
+anything: `secret.entropy_threshold`, where the working override is `--entropy` at the call site,
+and `[export]`, where it is `--export` and `--export-format`. They are listed here as what they
+are rather than described as working, because a key that is quietly ignored is worse than a key
+that does not exist.
+
+There is no key for user-supplied scanning rules, and there will not be one in this file: a rule
+needs a name, a severity, an entropy floor, and a capture group, none of which fit a format that
+holds flat sections of scalars and string lists. `secret.custom_rules` existed and was read by
+nothing; it has been removed. See `modules.md`.
 
 `clean.patterns` adds directory names to the built-in rule set rather than replacing it, and a
 name added there still needs a project marker beside it before it counts, exactly like the
@@ -141,7 +149,6 @@ require_confirm = true
 [secret]
 entropy_threshold = 4.5
 exclude_paths     = ["testdata/", "fixtures/", "*.lock"]
-custom_rules      = []
 
 [security]
 password_length            = 20

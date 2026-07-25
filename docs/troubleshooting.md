@@ -231,9 +231,10 @@ a guarantee.
 devnest secret rules
 ```
 
-lists the active rules. Add a custom rule under `[secret] custom_rules` for a credential format
-specific to your organisation. If the format is a common one, contributing the rule upstream helps
-everyone.
+lists the active rules, which is the whole surface of what a scan can find. There is no way to add
+your own: a rule needs a name, a severity, an entropy floor, and a pattern with a capture group,
+and none of that fits the configuration file's format. A credential format worth detecting is
+usually worth contributing upstream, where it gets a rule entry, a floor, and a test.
 
 ---
 

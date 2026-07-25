@@ -769,9 +769,25 @@ leak. A test serialises a whole result to JSON and fails if a credential appears
 `History` takes a `Runner`, so a tree scan cannot start a process.
 
 **Later.** Baseline files so an existing repository can adopt scanning without drowning in
-historical findings. User-supplied rules from configuration: the `secret.custom_rules` key is
-loaded and validated but not yet read by this module, because a user-supplied regular expression
-needs a complexity bound before it is compiled.
+historical findings.
+
+**Settled: no user-supplied rules from the configuration file.** The `secret.custom_rules` key
+existed, was loaded, and was read by nothing, which is the worst arrangement available: somebody
+adds their organisation's token format, the scan reports nothing, and they conclude they are clean.
+The key is gone.
+
+It was never going to work in that place. A rule is a name, a severity, an entropy floor, and a
+pattern with a capture group naming the part that is the credential; the configuration format holds
+flat sections of scalars and string lists and rejects arrays of tables on purpose. A bare list of
+patterns could have been read, but every one of them would have landed with no name to select or
+exclude it by, one fixed severity, and no floor of its own, which is precisely the shape that fills
+a report with placeholders and teaches people to ignore it. The rules table is the surface of what
+a scan can find, and a rule that arrives without the fields that make it judgeable is not a rule.
+
+If custom rules are built, they get their own file in their own format, passed at the call site,
+carrying the fields a rule needs. Note that the complexity bound the old note worried about is not
+the obstacle: Go's regexp is RE2 and cannot backtrack, so a pattern length cap and a count cap are
+the whole of it.
 
 ---
 

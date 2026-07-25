@@ -157,7 +157,6 @@ require_confirm = true
 [secret]
 entropy_threshold = 4.5
 exclude_paths     = ["testdata/", "fixtures/", "*.lock"]
-custom_rules      = []
 
 [network]
 timeout_ms      = 30000

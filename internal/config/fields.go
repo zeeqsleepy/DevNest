@@ -63,7 +63,6 @@ func fields() []field {
 		// devnest:allow-secret
 		{"secret", "entropy_threshold", kindFloat, func(c *Config, v any) { c.Secret.EntropyThreshold = v.(float64) }, func(c Config) any { return c.Secret.EntropyThreshold }},
 		{"secret", "exclude_paths", kindStringList, func(c *Config, v any) { c.Secret.ExcludePaths = v.([]string) }, func(c Config) any { return c.Secret.ExcludePaths }},
-		{"secret", "custom_rules", kindStringList, func(c *Config, v any) { c.Secret.CustomRules = v.([]string) }, func(c Config) any { return c.Secret.CustomRules }},
 
 		{"security", "password_length", kindInt, func(c *Config, v any) { c.Security.PasswordLength = v.(int64) }, func(c Config) any { return c.Security.PasswordLength }},
 		{"security", "password_symbols", kindBool, func(c *Config, v any) { c.Security.PasswordSymbols = v.(bool) }, func(c Config) any { return c.Security.PasswordSymbols }},
