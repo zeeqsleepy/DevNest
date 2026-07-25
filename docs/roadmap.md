@@ -116,7 +116,9 @@ Decisions worth carrying forward, recorded in `security.md` and `modules.md`:
 
 One redundancy was created knowingly: `devnest file hash` and `devnest security hash` overlap.
 They share an implementation, and differ in that the first takes several files while the second
-adds text and standard input. Whether both should exist is worth settling before 1.0.
+adds text and standard input. **Both stay**: each is the shortest spelling of a different job, and
+collapsing them would put text and standard input on a file command or a directory of build
+artefacts on a security one. The reasoning is in `modules.md`.
 
 ## Phase 5: Log tools *(complete)*
 

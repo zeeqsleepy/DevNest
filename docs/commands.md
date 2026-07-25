@@ -268,7 +268,8 @@ MD5 is available because published checksums still use it, not because it is a r
 for anything new.
 
 This shares its implementation with `devnest file hash`; that command takes several files at once,
-this one adds text and standard input.
+this one adds text and standard input. Both are kept for 1.0: the overlap is one line of help
+text, and removing either would leave one of the two jobs in the wrong group.
 
 ### `security checksum`
 

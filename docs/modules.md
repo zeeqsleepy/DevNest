@@ -247,7 +247,16 @@ decode command is precisely where untrusted bytes arrive.
 **Overlap with `devnest file hash`, stated plainly.** Both commands hash a file, and both call the
 same code. `file hash` takes several files at once and belongs with the file tools; `security hash`
 takes one input and adds text and standard input. The duplication is in the command surface, not
-in the implementation. Whether both should exist is a judgement worth revisiting before 1.0.
+in the implementation.
+
+**Both stay, settled for 1.0.** Each is the shortest spelling of a different job, and collapsing
+them moves one of those jobs somewhere nobody would look for it: hashing three build artefacts is
+file work, and hashing a string or standard input is not. The alternatives were worse. Dropping
+`security hash` puts text and `--stdin` on a command in the file group, which then has an input
+that is not a file. Dropping `file hash` costs the multiple-file form, and `devnest security hash`
+is a strange place to look for the digest of four files in a release directory. Neither trade buys
+anything: the cost of keeping both is one extra line in the help output, not a second
+implementation.
 
 **Later.** An option to check a password against a breach corpus without sending it anywhere (the
 k-anonymity range API does this) would be genuinely useful, but it makes a network call from a
