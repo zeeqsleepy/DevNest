@@ -114,7 +114,11 @@ func Default() Config {
 			RequireConfirm: true,
 		},
 		Secret: Secret{
-			EntropyThreshold: 4.5,
+			// Zero leaves every rule on the floor it was written with. A
+			// compiled default higher than those would quietly drop candidates
+			// on a machine with no configuration file at all, which is a
+			// strange way for a scanner to arrive.
+			EntropyThreshold: 0,
 			ExcludePaths:     []string{"testdata/", "fixtures/", "*.lock"},
 		},
 		Security: Security{

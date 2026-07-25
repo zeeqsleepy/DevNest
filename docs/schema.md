@@ -155,7 +155,7 @@ protect         = []           # paths never touched, whatever the patterns say
 require_confirm = true
 
 [secret]
-entropy_threshold = 4.5
+entropy_threshold = 0           # zero leaves every rule on its own floor
 exclude_paths     = ["testdata/", "fixtures/", "*.lock"]
 
 [network]

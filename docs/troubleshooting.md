@@ -214,6 +214,10 @@ devnest secret scan --exclude "testdata/" --exclude "*.lock"
 
 Make it permanent in configuration under `[secret]`. See `configuration.md`.
 
+Raising the floor is safe in the sense that matters: it moves only the rules that match by shape,
+never the ones matching a provider's prefix, so no value of `--entropy` will stop an AWS or GitHub
+key from being reported.
+
 To check whether a specific string would match, and why:
 
 ```

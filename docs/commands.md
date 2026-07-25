@@ -705,6 +705,11 @@ Read-only. Findings are always redacted.
 Flags: `--entropy` threshold, `--exclude <pattern>` repeatable, `--rule <name>` to run a subset,
 `--fail-on <severity>`.
 
+`--entropy` moves the floor on the rules that match by shape, which is where a noisy report comes
+from. The rules matching a provider's prefix keep their own floor whatever is passed: `AKIA`
+followed by sixteen uppercase characters is an AWS key identifier however it scores. Set it once
+in `secret.entropy_threshold` rather than on every run.
+
 Exits non-zero when findings exist at or above `--fail-on`, which is what makes it usable as a
 pre-commit hook or a CI gate.
 

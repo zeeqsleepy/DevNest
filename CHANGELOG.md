@@ -10,6 +10,26 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Fixed: the configured entropy floor is applied, and applies where it should
+
+`secret.entropy_threshold` was read from the configuration file and then used by nothing. The code
+meant to apply it assigned zero to a value that was already zero, so the only way to move a floor
+was `--entropy` on every run.
+
+It now works, and it moves only the rules that match by shape rather than by a provider's prefix.
+That is the difference between a tuning knob and an off switch: raising the floor is how somebody
+quietens a report full of guesses, and under the old reading a threshold of 4.5 in a configuration
+file would have stopped `AKIA...` and `ghp_...` from being reported at all, silently, on every run
+after it was set. A value with the shape of an AWS key identifier is one whatever it scores.
+
+`--entropy` has the same meaning and overrides the configured value for one run.
+
+The compiled default is now `0`, meaning every rule keeps the floor it was written with. It was
+`4.5`, which was never applied to anything; applying it as written would have been stricter than
+the rules themselves and would have dropped candidates on machines whose owners never configured
+anything. Scanning this repository at `4.5` reports nothing and at each rule's own floor reports
+one candidate, which is the whole argument in one line.
+
 ### Removed: the `secret.custom_rules` configuration key
 
 The key was loaded and read by nothing. Somebody adding their organisation's token format to it got

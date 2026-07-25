@@ -380,6 +380,27 @@ func TestScanCountsBySeverity(t *testing.T) {
 	}
 }
 
+// A raised floor is for quietening guesses. If it can hide a provider's key it
+// is a switch for turning the scanner off, worn as a tuning knob.
+func TestEntropyFloorMovesTheGenericRuleAndNothingElse(t *testing.T) {
+	system := newFakeFS().
+		with("a.txt", awsKeyID+"\n").
+		with("b.txt", "api_key = "+realPassword+"\n")
+
+	found := rulesFound(scan(t, system, ScanRequest{}).Findings)
+	if !contains(found, "generic-assignment") || !contains(found, "aws-access-key-id") {
+		t.Fatalf("rules found = %v, want both before the floor is raised", found)
+	}
+
+	raised := rulesFound(scan(t, system, ScanRequest{Entropy: 8}).Findings)
+	if contains(raised, "generic-assignment") {
+		t.Errorf("rules found = %v, want the generic match suppressed at a floor of 8", raised)
+	}
+	if !contains(raised, "aws-access-key-id") {
+		t.Errorf("rules found = %v, want the aws key reported whatever the floor", raised)
+	}
+}
+
 func TestScanRefusesAFile(t *testing.T) {
 	system := newFakeFS().with("a.txt", "text\n")
 

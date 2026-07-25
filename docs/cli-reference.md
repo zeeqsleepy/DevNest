@@ -136,7 +136,7 @@ The `secret` group shares these across `scan` and `history`:
 | Flag | Default | Meaning |
 |---|---|---|
 | `--rule <name>` | every rule | Run only this detector; repeatable |
-| `--entropy <n>` | each rule's own | Override the floor a match has to clear |
+| `--entropy <n>` | `secret.entropy_threshold` | Floor for the rules matching by shape; prefix rules keep theirs |
 | `--fail-on <severity>` | none | Exit non-zero when a finding is at or above this |
 
 `--exclude` and `--include-tests` apply to the working-tree scan, which is the only one walking a

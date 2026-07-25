@@ -54,8 +54,14 @@ type ScanRequest struct {
 	// Exclude are glob patterns matched against entry names, added to the
 	// built-in list rather than replacing it.
 	Exclude []string
-	// Entropy overrides the floor every rule that has one uses. Zero means
-	// each rule's own threshold.
+	// Entropy moves the floor on the rules that match by shape rather than by
+	// a provider's prefix, which is where noise comes from and where the floor
+	// is the only thing separating a credential from an ordinary string. Zero
+	// means each rule keeps its own.
+	//
+	// It deliberately does not touch the prefix rules. Somebody raising this to
+	// quieten a report is asking for fewer guesses, not for AWS and GitHub keys
+	// to stop being reported.
 	Entropy float64
 	// IncludeTests scans the directories that hold test fixtures. They are
 	// skipped by default because a fixture full of fake credentials is where
@@ -288,7 +294,7 @@ func matchLine(line string, active []Rule, floor float64) []Finding {
 
 		score := entropy(value)
 		threshold := rule.Entropy
-		if floor > 0 {
+		if floor > 0 && rule.tunable {
 			threshold = floor
 		}
 		if threshold > 0 && score < threshold {

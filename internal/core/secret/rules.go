@@ -48,6 +48,14 @@ type Rule struct {
 	// group names which capture group holds the credential, when the pattern
 	// needs context around it. Zero means the whole match.
 	group int
+	// tunable marks a rule whose entropy floor is the thing separating a
+	// credential from an ordinary string, so a caller may move it.
+	//
+	// A rule matching a provider's prefix is not tunable: AKIA followed by
+	// sixteen uppercase characters is an AWS key identifier whatever it scores,
+	// and letting a configured floor hide it would turn a knob for reducing
+	// noise into one that silently disables detection.
+	tunable bool
 }
 
 // rules is the built-in set.
@@ -202,7 +210,8 @@ var rules = []Rule{
 		Entropy:     3.5,
 		Pattern: `(?i)\b(?:api[_-]?key|secret|token|passwd|password|credential|auth)\b` +
 			`[^\n]{0,20}?['"\s:=]+['"]?([A-Za-z0-9/+_=-]{16,})['"]?`,
-		group: 1,
+		group:   1,
+		tunable: true,
 	},
 }
 

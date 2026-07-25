@@ -94,12 +94,18 @@ The full annotated default lives in `configs/config.example.toml`, and a test lo
 run to confirm it still parses and still matches the compiled defaults. An example that has drifted
 teaches the wrong thing to exactly the people least able to notice.
 
-`[general]`, `[scan]`, `[security]`, `[network]`, and `[clean]` have consumers today, and so does
-`secret.exclude_paths`. Two things are loaded, type-checked, and validated but not yet applied by
-anything: `secret.entropy_threshold`, where the working override is `--entropy` at the call site,
-and `[export]`, where it is `--export` and `--export-format`. They are listed here as what they
-are rather than described as working, because a key that is quietly ignored is worse than a key
-that does not exist.
+`[general]`, `[scan]`, `[security]`, `[network]`, `[clean]`, and `[secret]` have consumers today.
+`[export]` is loaded, type-checked, and validated but applied by nothing: the working controls are
+`--export` and `--export-format` at the call site. It is listed here as what it is rather than
+described as working, because a key that is quietly ignored is worse than a key that does not
+exist.
+
+`secret.entropy_threshold` sets the floor for the scanning rules that match by shape, and `--entropy`
+overrides it for one run. Neither touches the rules that match a provider's prefix: raising the
+floor is for quietening guesses, and a setting that could hide an AWS key would be a switch for
+turning the scanner off rather than a tuning knob. It defaults to zero, meaning every rule keeps
+the floor it was written with, because a compiled default stricter than the rules themselves would
+drop candidates on a machine whose owner never configured anything.
 
 There is no key for user-supplied scanning rules, and there will not be one in this file: a rule
 needs a name, a severity, an entropy floor, and a capture group, none of which fit a format that
@@ -147,7 +153,7 @@ protect         = []           # never touched, whatever the patterns match
 require_confirm = true
 
 [secret]
-entropy_threshold = 4.5
+entropy_threshold = 0          # zero leaves every rule on its own floor
 exclude_paths     = ["testdata/", "fixtures/", "*.lock"]
 
 [security]

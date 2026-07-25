@@ -72,7 +72,7 @@ func (s *secretFlags) register(set *flag.FlagSet) {
 	set.Var(&s.rules, "rule", "run only this rule; repeatable")
 	set.Var(&s.exclude, "exclude", "skip entries matching a glob; repeatable")
 	set.Float64Var(&s.entropy, "entropy", 0,
-		"override the entropy floor every rule uses")
+		"entropy floor for the rules that match by shape; prefix rules keep their own")
 	set.StringVar(&s.failOn, "fail-on", "",
 		"exit non-zero when a finding is at or above this severity")
 	set.BoolVar(&s.includeTests, "include-tests", false,
@@ -135,11 +135,11 @@ func runSecretScan(ctx context.Context, env *Env, args []string, flags secretFla
 	exclude = append(exclude, flags.exclude...)
 
 	entropy := flags.entropy
-	if entropy == 0 && env.Config.Secret.EntropyThreshold > 0 && len(flags.rules) == 0 {
-		// The configured threshold applies only when the user did not ask for
-		// a specific rule: someone testing one rule wants that rule's own
-		// floor, not a global override they set months ago.
-		entropy = 0
+	if entropy == 0 {
+		// The flag wins when it is given; otherwise the configured floor
+		// applies. Either way it moves only the rules that match by shape, so
+		// a value set months ago to quieten a report cannot hide an AWS key.
+		entropy = env.Config.Secret.EntropyThreshold
 	}
 
 	result, err := secret.Scan(ctx, secretReader(), secret.ScanRequest{
@@ -233,11 +233,16 @@ func newSecretHistoryCommand() *Command {
 				depth = -1
 			}
 
+			entropy := flags.entropy
+			if entropy == 0 {
+				entropy = env.Config.Secret.EntropyThreshold
+			}
+
 			result, err := secret.History(ctx, secretRunner(), secret.HistoryRequest{
 				Root:    root,
 				Depth:   depth,
 				Rules:   flags.rules,
-				Entropy: flags.entropy,
+				Entropy: entropy,
 			})
 			if err != nil {
 				return err

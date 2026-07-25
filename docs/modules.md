@@ -739,7 +739,7 @@ reporting matches with file, line, rule name, and a redacted excerpt.
 
 **Rules.** Pattern rules with an entropy threshold, compiled into the binary so the tool works
 offline and behaves identically everywhere. Sixteen of them: provider prefixes that mean one thing
-(`AKIA`, `ghp_`, `sk_live_`, `AIza`), private key headers, and two generic rules for an assignment
+(`AKIA`, `ghp_`, `sk_live_`, `AIza`), private key headers, and one generic rule for an assignment
 to something named like a secret. The set is deliberately not exhaustive, because a scanner that
 recognises two hundred providers and fires on every second file gets switched off, and a scanner
 that is switched off finds nothing.
@@ -748,6 +748,13 @@ that is switched off finds nothing.
 separates a live Stripe key from `sk_live_` followed by twenty X characters: both have the
 right shape, and only one carries any information. A `Keyword` substring in front of each pattern
 keeps the expensive part cheap, since most lines match no rule at all.
+
+**Only the generic rule's floor moves.** `--entropy`, and `secret.entropy_threshold` behind it,
+set the floor for rules that match by shape alone, and leave the prefix rules on their own. A
+person raising the floor is asking for fewer guesses in a noisy report; they are not asking for
+AWS and GitHub keys to stop being reported, and a knob that quietly did that would be a switch for
+turning the scanner off wearing a tuning knob's label. The rule struct carries the distinction, so
+a new rule declares whether its floor is the thing doing the discriminating.
 
 **History scanning reads added lines only.** A removal is not a second leak, and one credential
 added, reverted, and re-added is reported once. The default depth is 500 commits; the whole
