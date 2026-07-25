@@ -148,8 +148,12 @@ failure there means deleting the release, which costs nothing before anybody has
 
 - `.deb` and `.rpm` for amd64 and arm64, built and published with the release.
 - The winget manifests and the Homebrew cask are generated and attached to the release, but not
-  submitted anywhere yet. Both publishers are switched off in `.goreleaser.yaml` because neither
-  target exists: turning them on is one field each, described below.
+  submitted automatically yet. Both target repositories now exist — the tap at
+  `zeeqsleepy/homebrew-devnest` and a fork of `microsoft/winget-pkgs` at `zeeqsleepy/winget-pkgs`.
+  What is still missing is a token for each, which is why both publishers remain switched off in
+  `.goreleaser.yaml`: the workflow falls back to `github.token`, which is scoped to this repository
+  and cannot write to either target, so turning a publisher on before its secret exists fails the
+  release halfway through publishing.
 - `go install` works directly from the tag with no extra step.
 
 **The Homebrew tap** is `zeeqsleepy/homebrew-devnest`, created with 0.1.0 and updated by hand for
@@ -163,13 +167,19 @@ brew tap zeeqsleepy/devnest
 brew install --cask devnest
 ```
 
-To have each release update it automatically, add a token with write access to that repository as
-the `HOMEBREW_TAP_TOKEN` secret and set `skip_upload: false` under `homebrew_casks`. Until then,
-copy the `devnest.rb` attached to the release into `Casks/` in the tap.
+To have each release update it automatically, add a fine-grained token with **Contents: read and
+write** on that repository as the `HOMEBREW_TAP_TOKEN` secret, then set `skip_upload: false` under
+`homebrew_casks`. Until then, copy the `devnest.rb` attached to the release into `Casks/` in the
+tap.
 
-**Turning on winget:** fork `microsoft/winget-pkgs`, add a token for it as `WINGET_TOKEN`, and set
-`skip_upload: false` under `winget`. Each release then opens a pull request against the fork,
-which is submitted upstream by hand.
+**Turning on winget:** the fork is `zeeqsleepy/winget-pkgs`, created 2026-07-25. Add a fine-grained
+token with **Contents: read and write** on it as the `WINGET_TOKEN` secret, then set
+`skip_upload: false` under `winget`. Each release then pushes a `devnest-<version>` branch to the
+fork; the pull request to `microsoft/winget-pkgs` is opened by hand, which is where the manifest
+gets read by a person before it reaches a package manager on other people's machines.
+
+Set either secret with `gh secret set <NAME> --repo zeeqsleepy/DevNest`, which reads the value
+without putting it in shell history.
 
 Package channels lag the release by design. If something is wrong with a binary, it is easier to
 fix before three package managers have distributed it.

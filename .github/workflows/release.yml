@@ -67,9 +67,11 @@ jobs:
           args: release --clean
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Both publishers are off in .goreleaser.yaml until their repositories
-          # and tokens exist. The fallbacks keep the template resolvable so that
-          # turning one on is a one-line change rather than a debugging session.
+          # Both publishers are off in .goreleaser.yaml until these secrets
+          # exist; their repositories already do. The fallbacks keep the
+          # template resolvable so that turning one on is a one-line change
+          # rather than a debugging session, and github.token cannot write to
+          # either target, so a publisher switched on early fails loudly.
           HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN || github.token }}
           WINGET_TOKEN: ${{ secrets.WINGET_TOKEN || github.token }}
 

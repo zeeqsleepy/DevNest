@@ -114,9 +114,11 @@ changelog:
 # package to be notable first (stars, forks, watchers, and thirty days of
 # maintenance) and DevNest is not there yet.
 #
-# Uploading is off until a token with write access to the tap is in the release
-# secrets. The cask is generated and attached to the release either way, so it
-# can be copied across by hand. See docs/release-process.md.
+# The tap repository exists. Uploading stays off until HOMEBREW_TAP_TOKEN is in
+# the release secrets: the workflow falls back to github.token, which cannot
+# write to another repository, so switching this on early fails a release
+# halfway through publishing. The cask is generated and attached to the release
+# either way, so it can be copied across by hand. See docs/release-process.md.
 homebrew_casks:
   - name: devnest
     ids: [devnest]
@@ -137,9 +139,9 @@ homebrew_casks:
             system_command "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{staged_path}/devnest"]
           end
 
-# The winget manifest is generated and uploaded with the release. Submitting it
-# needs a fork of microsoft/winget-pkgs and a token, which is why publishing is
-# off here rather than half-configured.
+# The winget manifest is generated and uploaded with the release. The fork of
+# microsoft/winget-pkgs exists; publishing stays off until WINGET_TOKEN is in
+# the release secrets, for the same reason as the tap above.
 winget:
   - name: DevNest
     publisher: zeeqsleepy
