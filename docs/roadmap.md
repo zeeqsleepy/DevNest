@@ -68,8 +68,9 @@ Two things moved out of this phase:
   file commands produce rows and needed one; CSV and Markdown still have nobody asking. They land
   with the first user who wants a file listing in a spreadsheet or a report in a ticket.
 - **`devnest hash` and `devnest scan size`**, as planned in Phase 0, are now `devnest file hash`
-  and `devnest file size`. Both belong beside the other file operations, and `commands.md` records
-  what remains for a separate `hash` command: verification and tree digests.
+  and `devnest file size`. Both belong beside the other file operations. The two things a separate
+  `hash` command would have added are now settled: checksum file verification is a flag on
+  `security checksum` after 1.0, and tree digests are not planned.
 
 ## Phase 3: Network tools *(complete)*
 
@@ -339,6 +340,11 @@ those keys (never the safety-relevant ones) becomes reasonable. **`clean` is not
 that is settled rather than pending: a file that travels with a clone must never widen what a
 delete command will remove. The reasoning is in `modules.md`.
 
+**Checksum file verification.** `security checksum` against a published `SHA256SUMS` rather than
+one pasted digest, in the format every `*sum` tool writes. A flag on the existing command, so it
+can land in any minor release without touching the frozen surface. Windows has no `sha256sum -c`,
+which is what makes this worth building rather than pointing at coreutils.
+
 **Scan comparison.** Diff two scans to show growth over time. Useful for tracking a repository
 that keeps getting bigger and nobody knows why.
 
@@ -357,6 +363,8 @@ already shaped for it; what is missing is the API stability commitment, not the 
 
 Restated from `prd.md` because roadmap documents attract feature requests:
 
+- Deterministic tree digests. A directory hash is a specification, not a feature, and nothing
+  consumes one; the reasoning is in `modules.md`.
 - Package management, installation, or version switching.
 - A daemon, a watcher, or any long-running mode.
 - A TUI or interactive shell.

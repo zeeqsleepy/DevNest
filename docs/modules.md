@@ -258,9 +258,22 @@ is a strange place to look for the digest of four files in a release directory. 
 anything: the cost of keeping both is one extra line in the help output, not a second
 implementation.
 
-**Later.** An option to check a password against a breach corpus without sending it anywhere (the
-k-anonymity range API does this) would be genuinely useful, but it makes a network call from a
-module whose selling point is that it does not.
+**Later.** Verifying a file against a whole checksum file rather than one pasted digest: the
+`SHA256SUMS` a release publishes, in the format every `*sum` tool writes. It belongs here as a flag
+on `VerifyChecksum`'s request, reusing `DigestReader` and `AlgorithmForLength`, and it earns its
+place because Windows has no `sha256sum -c`: CertUtil hashes one file and leaves the comparing to
+the reader. Also an option to check a password against a breach corpus without sending it anywhere
+(the k-anonymity range API does this), which would be genuinely useful but makes a network call
+from a module whose selling point is that it does not.
+
+**Deliberately absent: tree digests.** Folding a directory into one hash is not a hashing feature,
+it is a specification: the order files are visited in, whether the path separator is normalised,
+whether names are encoded before being mixed in, what a symbolic link contributes, whether the
+execute bit counts, and whether an empty directory exists at all. Every one of those has to be
+decided, documented, and then never changed, because a tree digest whose meaning shifts between
+versions is worse than no tree digest. Nothing in DevNest consumes one, nobody has asked for one,
+and for the trees developers actually care about git already answers the question. It is not
+planned rather than not yet built.
 
 ---
 
@@ -561,20 +574,17 @@ anything is signalled.
 ### `core/hash`: checksums *(superseded)*
 
 Hashing files lives in `core/file` as `devnest file hash`; hashing text and verifying a single
-checksum live in `core/security` as `devnest security hash` and `devnest security checksum`. What
-remains unimplemented from the original plan is verification against a whole checksum *file* (the
-`SHA256SUMS` a release publishes) and deterministic directory tree digests.
+checksum live in `core/security` as `devnest security hash` and `devnest security checksum`. The
+digest implementation itself is in `platform/fs`, which is why one module can hash several files
+and another can hash a string without either owning a copy of it.
 
-**Owns.** Computing MD5, SHA-1, SHA-256, SHA-512, and CRC32 over a file, a directory tree, or
-stdin, and verifying content against an expected digest or a checksum file.
+The two items this module was going to add beyond that are settled: **checksum file verification**
+is worth building and goes to `core/security` as a flag, not to a module of its own; **tree
+digests** are not planned at all. Both are argued where they landed, under `core/security` above.
 
-**Design.** Streams through a fixed-size buffer; file size does not affect memory use. Multiple
-algorithms in one pass write to a `MultiWriter` so a large file is read once. Directory hashing
-produces a deterministic tree digest by sorting entries by path and folding in relative paths as
-well as content, so a rename changes the digest.
-
-**Verification** compares in constant time and exits non-zero on mismatch, so it drops directly
-into a CI step.
+The rest of the original plan is already shipped, with two deliberate reductions: the algorithms
+are MD5, SHA-256, and SHA-512, since SHA-1 and CRC32 answer questions nobody asks of a developer
+tool, and the CRC32 use for detecting accidental corruption is served by any of the three.
 
 **Depends on.** `platform/fs`.
 

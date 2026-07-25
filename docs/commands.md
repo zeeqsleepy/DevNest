@@ -587,8 +587,13 @@ another to exit politely, so the command says so rather than presenting a kill a
 ## `devnest hash`: checksums *(superseded)*
 
 Hashing a file is `devnest file hash`; hashing text and verifying one checksum are `devnest
-security hash` and `devnest security checksum`. What remains unimplemented is verification against
-a whole checksum *file* (the `SHA256SUMS` a release publishes) and deterministic tree digests.
+security hash` and `devnest security checksum`.
+
+Two gaps were left open here and are now settled. **Verifying against a whole checksum file** (the
+`SHA256SUMS` a release publishes) is worth having and arrives as a flag on `security checksum`, not
+as a group of its own; see `roadmap.md`. It waits until after 1.0 only because adding a flag breaks
+nothing later. **Deterministic tree digests are not planned**, and that is a decision rather than a
+delay: see `modules.md`.
 
 ---
 
