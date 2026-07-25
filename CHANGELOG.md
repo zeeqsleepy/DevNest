@@ -10,6 +10,16 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-07-25
+
+A minor version rather than a patch: a configuration key was removed and a flag's meaning was
+narrowed, and `docs/release-process.md` counts both as public surface. Pre-1.0 still carries no
+compatibility promise, but the version number should say what happened rather than hide it.
+
+The Homebrew tap and the winget fork are now updated by the release itself, so this is the first
+version that reaches a package manager without anyone copying a file across by hand. The pull
+request to `microsoft/winget-pkgs` is still opened by a person.
+
 ### Fixed: the configured entropy floor is applied, and applies where it should
 
 `secret.entropy_threshold` was read from the configuration file and then used by nothing. The code
@@ -526,5 +536,6 @@ them. See `docs/roadmap.md` for what comes next.
 
 ---
 
-[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.1.0...main
+[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.2.0...main
+[0.2.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.2.0
 [0.1.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.1.0
