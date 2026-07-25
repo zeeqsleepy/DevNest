@@ -186,6 +186,14 @@ costs one pull request per release.
 the manifests keep being generated and attached to the release, so a channel can be updated by hand
 while whatever went wrong is fixed.
 
+**`403 Resource not accessible by personal access token`** on either push means the token exists
+and is missing the permission, not the access: a fine-grained token starts at `Metadata: read only`
+and **Contents: read and write** has to be added explicitly under Repository permissions. It
+happened on 0.2.0, where both publishers failed this way after the GitHub release had already been
+created. That order is deliberate and worth knowing: the binaries publish first, so a token problem
+leaves a complete release with two package channels a version behind, recoverable by copying the
+attached `devnest.rb` and `zeeqsleepy.DevNest*.yaml` across by hand.
+
 Set either secret with `gh secret set <NAME> --repo zeeqsleepy/DevNest`, which reads the value
 without putting it in shell history.
 
