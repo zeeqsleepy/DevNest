@@ -87,6 +87,7 @@ func TestCompletionScriptsCarryTheirShellHook(t *testing.T) {
 // testing only the last word would offer secret's flags inside "devnest scan".
 func TestFishConditionTestsEveryWordOfThePath(t *testing.T) {
 	got := fishCondition("devnest secret scan")
+	// devnest:allow-secret — a fish condition, matched by generic-assignment.
 	want := "__fish_seen_subcommand_from secret; and __fish_seen_subcommand_from scan"
 
 	if got != want {
