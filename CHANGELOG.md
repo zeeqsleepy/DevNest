@@ -10,6 +10,12 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-07-28
+
+A minor rather than a patch: two flags and two JSON counters were added, and
+`docs/release-process.md` counts flag names and JSON fields as public surface. A scan without
+`--baseline` behaves exactly as it did in 0.3.1.
+
 ### Added: secret scanning baselines
 
 - `devnest secret scan --baseline <path>`: accept the findings recorded in a file, and report only
@@ -607,7 +613,8 @@ them. See `docs/roadmap.md` for what comes next.
 
 ---
 
-[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.3.1...main
+[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.4.0...main
+[0.4.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.4.0
 [0.3.1]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.1
 [0.3.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.0
 [0.2.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.2.0
