@@ -195,7 +195,6 @@ data.goVersion: string
 data.healthy: boolean
 data.platform: string
 data.shell: string
-data.terminal: string
 data.version: string
 data.warned: number
 data: object

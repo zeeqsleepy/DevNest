@@ -118,7 +118,9 @@ Verifies the things only a real process can verify:
   them with `testdata/json-surface.txt`. Field names are public surface, so a rename is a major
   release; this is what makes one visible as a diff rather than as somebody's broken script.
   The fixture is built by the test — including its own small git repository, because this
-  checkout's clone depth is CI's decision and a shallow one reports no contributors.
+  checkout's clone depth is CI's decision and a shallow one reports no contributors. A field whose
+  presence depends on where the test runs rather than on what it was given is named and skipped:
+  `doctor` reports the terminal it found, and a CI runner has none.
 - `--help` works for every command, and every command has a description and at least two examples.
 - Signal handling: send an interrupt mid-run, expect exit 5 and a clean unwind.
 - Destructive commands do nothing without `--apply`: asserted by checking the tree afterwards,

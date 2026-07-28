@@ -36,6 +36,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
 	"testing"
@@ -117,6 +118,14 @@ var surfaceCases = []struct {
 // is frozen too: a script branching on error.code depends on it.
 var surfaceFailures = map[string]bool{"error envelope": true}
 
+// surfaceIgnored are fields whose presence depends on where the test runs
+// rather than on what it was given. "doctor" reports the terminal it found, and
+// omits the field when there is none: present on a developer's machine, absent
+// on a CI runner. Freezing the rest of the command is worth one exception.
+var surfaceIgnored = map[string][]string{
+	"doctor": {"data.terminal"},
+}
+
 func TestJSONSurface(t *testing.T) {
 	replacements := surfaceFixture(t)
 	golden := readSurfaceGolden(t)
@@ -145,7 +154,7 @@ func TestJSONSurface(t *testing.T) {
 
 		paths := map[string]bool{}
 		collectShape(decoded, "", paths)
-		surface := renderShape(paths)
+		surface := renderShape(paths, surfaceIgnored[testCase.name])
 		recorded[testCase.name] = surface
 
 		if *updateSurface {
@@ -213,9 +222,13 @@ func join(path, key string) string {
 	return path + "." + key
 }
 
-func renderShape(paths map[string]bool) string {
+func renderShape(paths map[string]bool, ignored []string) string {
 	lines := make([]string, 0, len(paths))
 	for line := range paths {
+		path := line[:strings.LastIndex(line, ": ")]
+		if slices.Contains(ignored, path) {
+			continue
+		}
 		lines = append(lines, line)
 	}
 	sort.Strings(lines)
