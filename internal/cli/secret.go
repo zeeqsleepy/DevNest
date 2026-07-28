@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -66,6 +67,11 @@ type secretFlags struct {
 	entropy      float64
 	failOn       string
 	includeTests bool
+	// baseline and updateBaseline belong to the working-tree scan alone, and
+	// are registered separately so they do not appear on a history run that
+	// could not honour them.
+	baseline       string
+	updateBaseline bool
 }
 
 func (s *secretFlags) register(set *flag.FlagSet) {
@@ -77,6 +83,13 @@ func (s *secretFlags) register(set *flag.FlagSet) {
 		"exit non-zero when a finding is at or above this severity")
 	set.BoolVar(&s.includeTests, "include-tests", false,
 		"scan testdata and fixtures, which are full of fake credentials")
+}
+
+func (s *secretFlags) registerBaseline(set *flag.FlagSet) {
+	set.StringVar(&s.baseline, "baseline", "",
+		"accept the findings recorded in this file and report only what is new")
+	set.BoolVar(&s.updateBaseline, "update-baseline", false,
+		"write everything this scan found to the --baseline file, accepting it")
 }
 
 func secretReader() secret.Reader { return fs.System{} }
@@ -102,7 +115,13 @@ func newSecretScanCommand() *Command {
 			"--fail-on makes this a gate: with it, the command exits non-zero when " +
 			"anything at or above that severity was found, which is what a pre-commit " +
 			"hook or a CI step needs. Without it, finding something is still a " +
-			"successful run.",
+			"successful run.\n\n" +
+			"--baseline is how an old repository starts scanning. Findings recorded in " +
+			"the file are accepted and left out of the report and out of the gate, so " +
+			"only what arrives after today can fail a build. Create or refresh the file " +
+			"with --update-baseline, which accepts everything the scan found; read it " +
+			"before committing it, because accepting is not fixing. It holds no " +
+			"credential, only the same redacted excerpt a finding carries.",
 		Examples: []Example{
 			{
 				Command:     "devnest secret scan .",
@@ -112,8 +131,19 @@ func newSecretScanCommand() *Command {
 				Command:     "devnest secret scan --rule aws-access-key-id --output json",
 				Description: "Run one rule and hand the result to a script.",
 			},
+			{
+				Command:     "devnest secret scan --baseline .devnest-secrets.json --update-baseline",
+				Description: "Accept what an old repository already has, once.",
+			},
+			{
+				Command:     "devnest secret scan --baseline .devnest-secrets.json --fail-on high",
+				Description: "Fail only on credentials added since the baseline.",
+			},
 		},
-		SetFlags: flags.register,
+		SetFlags: func(set *flag.FlagSet) {
+			flags.register(set)
+			flags.registerBaseline(set)
+		},
 		Run: func(ctx context.Context, env *Env, args []string) error {
 			return runSecretScan(ctx, env, args, flags)
 		},
@@ -142,15 +172,34 @@ func runSecretScan(ctx context.Context, env *Env, args []string, flags secretFla
 		entropy = env.Config.Secret.EntropyThreshold
 	}
 
+	baseline, err := loadBaseline(flags)
+	if err != nil {
+		return err
+	}
+
 	result, err := secret.Scan(ctx, secretReader(), secret.ScanRequest{
 		Root:         root,
 		Rules:        flags.rules,
 		Exclude:      exclude,
 		Entropy:      entropy,
 		IncludeTests: flags.includeTests,
+		Baseline:     baseline,
 	})
 	if err != nil {
 		return err
+	}
+
+	if flags.updateBaseline {
+		written, err := writeBaseline(flags.baseline, result)
+		if err != nil {
+			return err
+		}
+		// No gate on the run that accepts everything: the user has just said
+		// they know. The table is still printed, because accepting findings
+		// without reading them is exactly what this must not encourage.
+		return env.EmitTable(result,
+			secretBaselineText(result, flags.baseline, written),
+			secretFindingsTable(result.Findings))
 	}
 
 	if err := env.EmitTable(result, secretScanText(result), secretFindingsTable(result.Findings)); err != nil {
@@ -164,6 +213,55 @@ func runSecretScan(ctx context.Context, env *Env, args []string, flags secretFla
 			"found %s candidate(s) at or above %s", output.Count(result.Count), threshold)
 	}
 	return nil
+}
+
+// loadBaseline reads the accepted findings, unless the run is about to
+// replace them.
+func loadBaseline(flags secretFlags) (secret.Baseline, error) {
+	if flags.baseline == "" {
+		if flags.updateBaseline {
+			return secret.Baseline{}, errors.New(errors.CodeInvalidInput,
+				"--update-baseline needs --baseline to say which file to write").
+				WithHint("pass --baseline <path>; the path is asked for rather than assumed, " +
+					"because this file gets committed")
+		}
+		return secret.Baseline{}, nil
+	}
+
+	// Reading the old file before overwriting it would hide the very findings
+	// the new one exists to record.
+	if flags.updateBaseline {
+		return secret.Baseline{}, nil
+	}
+
+	data, err := fs.System{}.ReadFile(flags.baseline)
+	if err != nil {
+		if errors.CodeOf(err) == errors.CodeNotFound {
+			return secret.Baseline{}, errors.New(errors.CodeNotFound,
+				"no baseline at %s", flags.baseline).
+				WithHint("create it with --update-baseline once you have read what it will accept")
+		}
+		return secret.Baseline{}, err
+	}
+
+	return secret.ParseBaseline(data)
+}
+
+// writeBaseline records this scan as the accepted set and reports how many
+// entries it holds.
+func writeBaseline(path string, result secret.ScanResult) (int, error) {
+	baseline := secret.NewBaseline(result)
+
+	data, err := json.MarshalIndent(baseline, "", "  ")
+	if err != nil {
+		return 0, errors.Wrap(err, errors.CodeInternal, "cannot render the baseline")
+	}
+	data = append(data, '\n')
+
+	if err := (fs.System{}).WriteAtomic(path, data); err != nil {
+		return 0, err
+	}
+	return len(baseline.Entries), nil
 }
 
 // secretPath takes the optional directory argument.
@@ -366,6 +464,22 @@ func secretScanText(result secret.ScanResult) output.TextFunc {
 	}
 }
 
+// secretBaselineText reports a run that accepted what it found.
+func secretBaselineText(result secret.ScanResult, path string, written int) output.TextFunc {
+	return func(w io.Writer) error {
+		if result.Count > 0 {
+			if err := output.WriteTable(w, findingColumns(), findingRows(result.Findings)); err != nil {
+				return err
+			}
+			fmt.Fprintln(w)
+		}
+
+		fmt.Fprintf(w, "Accepted %s finding(s) into %s.\n", output.Count(written), path)
+		fmt.Fprintln(w, "Accepting is not fixing. Read the file, and rotate anything real.")
+		return scannedNote(w, result)
+	}
+}
+
 // scannedNote says how much of the tree was looked at. A clean result over
 // four files is not the same claim as a clean result over four thousand.
 func scannedNote(w io.Writer, result secret.ScanResult) error {
@@ -376,6 +490,12 @@ func scannedNote(w io.Writer, result secret.ScanResult) error {
 
 	if result.Suppressed > 0 {
 		fmt.Fprintf(w, ", %s suppressed by a comment", output.Count(result.Suppressed))
+	}
+	if result.Baselined > 0 {
+		fmt.Fprintf(w, ", %s accepted by the baseline", output.Count(result.Baselined))
+	}
+	if result.BaselineStale > 0 {
+		fmt.Fprintf(w, ", %s baseline entry(ies) matched nothing", output.Count(result.BaselineStale))
 	}
 	_, err := fmt.Fprintln(w, ".")
 	return err

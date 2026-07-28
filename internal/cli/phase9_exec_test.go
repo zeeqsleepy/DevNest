@@ -156,3 +156,87 @@ func TestGitReportsSomethingThatIsNotARepository(t *testing.T) {
 		t.Errorf("code = %q, want %q", code, errors.CodeInvalidInput)
 	}
 }
+
+// The baseline exists so that an old repository can adopt scanning, so the
+// test is that whole story: accept what is there, then fail only on what
+// arrives afterwards.
+func TestSecretBaselineAcceptsThenGatesOnWhatIsNew(t *testing.T) {
+	// Split so the scanner does not find its own test fixture.
+	const awsKey = "AKIA" + "IOSFODNN7EXAMPLE"
+	const slack = "xoxb" + "-123456789012-1234567890123-AbCdEfGhIjKlMnOpQrStUvWx"
+
+	project := t.TempDir()
+	settings := filepath.Join(project, "settings.toml")
+	if err := os.WriteFile(settings, []byte("key = \""+awsKey+"\"\n"), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	baseline := filepath.Join(t.TempDir(), "baseline.json")
+
+	// Without a baseline the gate fires.
+	got := exec(t, nil, append(isolated(t), "secret", "scan", project, "--fail-on", "high")...)
+	if errors.CodeOf(got.err) != errors.CodeCheckFailed {
+		t.Fatalf("code = %q, want %q", errors.CodeOf(got.err), errors.CodeCheckFailed)
+	}
+
+	// Accepting it writes the file and does not fail, but still shows what was
+	// accepted.
+	got = exec(t, nil, append(isolated(t), "secret", "scan", project,
+		"--baseline", baseline, "--update-baseline", "--fail-on", "high")...)
+	if got.err != nil {
+		t.Fatalf("writing a baseline failed: %v", got.err)
+	}
+	if !strings.Contains(got.stdout, "Accepted") || !strings.Contains(got.stdout, awsKey[:4]) {
+		t.Errorf("stdout = %q, want the accepted finding shown", got.stdout)
+	}
+	if _, err := os.Stat(baseline); err != nil {
+		t.Fatalf("the baseline was not written: %v", err)
+	}
+
+	// The same tree now passes.
+	got = exec(t, nil, append(isolated(t), "secret", "scan", project,
+		"--baseline", baseline, "--fail-on", "high")...)
+	if got.err != nil {
+		t.Fatalf("the accepted finding still failed the gate: %v", got.err)
+	}
+	if !strings.Contains(got.stdout, "accepted by the baseline") {
+		t.Errorf("stdout = %q, want the baseline reported", got.stdout)
+	}
+
+	// A credential added afterwards does not.
+	if err := os.WriteFile(filepath.Join(project, "new.env"), []byte("t = \""+slack+"\"\n"), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	got = exec(t, nil, append(isolated(t), "secret", "scan", project,
+		"--baseline", baseline, "--fail-on", "high")...)
+	if errors.CodeOf(got.err) != errors.CodeCheckFailed {
+		t.Errorf("code = %q, want the new credential to fail the gate", errors.CodeOf(got.err))
+	}
+}
+
+func TestSecretBaselineRefusesUnusableRequests(t *testing.T) {
+	project := t.TempDir()
+
+	// A write with nowhere to write to.
+	got := exec(t, nil, append(isolated(t), "secret", "scan", project, "--update-baseline")...)
+	if errors.CodeOf(got.err) != errors.CodeInvalidInput {
+		t.Errorf("code = %q, want %q", errors.CodeOf(got.err), errors.CodeInvalidInput)
+	}
+
+	// A baseline that is not there is not an empty baseline: silently
+	// accepting nothing would read as a clean adoption.
+	missing := filepath.Join(project, "absent.json")
+	got = exec(t, nil, append(isolated(t), "secret", "scan", project, "--baseline", missing)...)
+	if errors.CodeOf(got.err) != errors.CodeNotFound {
+		t.Errorf("code = %q, want %q", errors.CodeOf(got.err), errors.CodeNotFound)
+	}
+
+	// A file that cannot be understood is refused rather than half applied.
+	broken := filepath.Join(project, "broken.json")
+	if err := os.WriteFile(broken, []byte(`{"entries":[{"path":"x"}]}`), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	got = exec(t, nil, append(isolated(t), "secret", "scan", project, "--baseline", broken)...)
+	if errors.CodeOf(got.err) != errors.CodeParse {
+		t.Errorf("code = %q, want %q", errors.CodeOf(got.err), errors.CodeParse)
+	}
+}

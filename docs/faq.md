@@ -80,6 +80,9 @@ That is a primary use case. Every command has `--output json` with stable field 
 exit codes, and clean stdout/stderr separation. `devnest secret scan` and `devnest security checksum`
 exit non-zero on a negative result specifically so they work as gates without output parsing.
 
+A repository that already has findings adopts the scanning gate with `secret scan --baseline`:
+accept what is there once, and only credentials added afterwards can fail the build.
+
 **Does it need admin rights?**
 
 No, and it never asks for them. Some information (process ownership for other users' processes)

@@ -67,6 +67,10 @@ type ScanRequest struct {
 	// skipped by default because a fixture full of fake credentials is where
 	// this kind of tool produces its worst noise.
 	IncludeTests bool
+	// Baseline holds the findings this project has already accepted. They are
+	// dropped from the result before it is counted, so a severity gate sees
+	// only what is new. The zero value accepts nothing.
+	Baseline Baseline
 }
 
 // ScanResult is what a scan found.
@@ -84,6 +88,12 @@ type ScanResult struct {
 	FilesSkipped int `json:"filesSkipped"`
 	// Suppressed counts the lines that matched but carried the inline marker.
 	Suppressed int `json:"suppressed"`
+	// Baselined counts the findings a baseline file had already accepted, and
+	// BaselineStale the entries in it that matched nothing this run. Both are
+	// reported: a baseline that hides more than anybody remembers, or that has
+	// rotted, is worth saying out loud.
+	Baselined     int `json:"baselined"`
+	BaselineStale int `json:"baselineStale"`
 	// RulesUsed is how many detectors ran.
 	RulesUsed int `json:"rulesUsed"`
 }
@@ -175,6 +185,11 @@ func Scan(ctx context.Context, reader Reader, request ScanRequest) (ScanResult, 
 	if err != nil {
 		return ScanResult{}, err
 	}
+
+	// The baseline is applied before anything is counted, so BySeverity and
+	// Count describe what is new. A gate that fired on findings the project
+	// already accepted would be a gate nobody leaves switched on.
+	request.Baseline.filter(&result)
 
 	finish(&result)
 	return result, nil

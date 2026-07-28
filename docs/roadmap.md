@@ -329,10 +329,15 @@ enough to be confident about it, because withdrawing a promise is much harder th
 
 ## Before 1.0
 
-**Shipped since 0.2.0:** `security checksum --check`, which verifies a published `SHA256SUMS`
-rather than one pasted digest. It was listed below as an after-1.0 direction and moved up, because
-a flag only adds surface: waiting for the freeze bought nothing, and Windows still has no
-`sha256sum -c`.
+**Shipped since 0.2.0**, both listed below as after-1.0 directions and both moved up for the same
+reason: a flag only adds surface, so waiting for the compatibility freeze bought nothing.
+
+- `security checksum --check`, which verifies a published `SHA256SUMS` rather than one pasted
+  digest. Windows still has no `sha256sum -c`.
+- `secret scan --baseline` and `--update-baseline`, so a repository with historical findings can
+  adopt scanning and gate on what is new. This one moved up because it is the difference between a
+  scanner an old project can use and one it cannot: a check that fails on day one is a check
+  somebody turns off in a week.
 
 ## After 1.0
 
@@ -351,9 +356,6 @@ delete command will remove. The reasoning is in `modules.md`.
 that keeps getting bigger and nobody knows why.
 
 **Git hotspot analysis.** Files by change frequency, as a proxy for where the risk concentrates.
-
-**Secret scanning baselines.** So an existing repository can adopt scanning without drowning in
-historical findings.
 
 **More toolchains in `env`.** A table entry each, so this is contribution-friendly and does not
 need a maintainer.

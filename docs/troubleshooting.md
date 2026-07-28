@@ -226,6 +226,24 @@ devnest secret test "the-string-in-question"
 
 ---
 
+## The scanner reports hundreds of things this repository has always had
+
+That is what a baseline is for. Accept what is there today, then gate on what arrives afterwards:
+
+```
+devnest secret scan --baseline .devnest-secrets.json --update-baseline
+devnest secret scan --baseline .devnest-secrets.json --fail-on high
+```
+
+Read the file before committing it. Accepting is not fixing, and anything in there that is a real
+credential still needs rotating; the excerpt in the file is redacted, so the file itself is safe to
+commit either way.
+
+Later runs report `baselineStale` when entries stop matching. That is the signal to regenerate the
+file with `--update-baseline`, which prunes them.
+
+---
+
 ## The secret scanner missed something
 
 Also expected. Pattern matching cannot catch everything, and a scanner is a safety net rather than

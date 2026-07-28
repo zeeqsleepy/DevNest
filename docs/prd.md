@@ -161,4 +161,13 @@ Decided:
   `clean.patterns` and `clean.protect` in the user's own configuration, which the user wrote. Both
   stay subject to the marker rule and neither can lift the root and home directory refusal.
 
+- **Whether a secret baseline may be a project-local file**, given the answer above: yes, and the
+  difference is the direction it points. A `clean` allow list widens what a delete command will
+  remove on the machine that cloned it; a baseline narrows what a report says, and the worst a
+  hostile one can do is hide a finding from a scan that was optional to begin with. It cannot
+  delete, cannot lower a severity, and cannot be silent about itself — accepted findings are
+  counted in the output, and entries that no longer match are counted too. It is also asked for by
+  path rather than discovered by name, so no file appears in a tree and starts suppressing
+  findings without somebody having typed its name.
+
 Nothing is carried. Every question opened during the phases has been answered.

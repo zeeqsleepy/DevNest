@@ -10,6 +10,33 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: secret scanning baselines
+
+- `devnest secret scan --baseline <path>`: accept the findings recorded in a file, and report only
+  what is new. Accepted findings leave the table, the counts, and the exit code, so `--fail-on`
+  gates on what arrived since.
+- `devnest secret scan --baseline <path> --update-baseline`: write everything this scan found to
+  that file. This run never fails the gate, and it still prints what it accepted.
+
+This is what lets an old repository start scanning. Four hundred historical candidates fail every
+run, and a check that always fails is a check somebody turns off in a week; a baseline draws the
+line at today.
+
+An entry is a path, a rule, and the redacted excerpt. **Never a line number**: a finding that moved
+down a file when somebody added an import is the same finding, and a baseline that forgets what it
+accepted on every edit is one nobody keeps. **Never the value**: the excerpt is the same four
+characters and length the report shows, because the scanner does not hold the credential in the
+first place, which is what makes the file safe to commit.
+
+Two counters say what the file did. `baselined` is how many findings it accepted; `baselineStale`
+is how many of its entries matched nothing this run — a credential that was dealt with, or a file
+that moved. A baseline nobody prunes eventually accepts things that are not there.
+
+The path is asked for rather than assumed: this file gets committed, and a magic filename appearing
+in somebody's repository is not a decision this tool should make. `secret history` has no baseline,
+because that scan is an audit of what was committed and the answer to a credential in the history
+is rotating it.
+
 ## [0.3.1] - 2026-07-28
 
 A patch: help text only. No command, flag, field, or exit code changed.

@@ -118,6 +118,14 @@ devnest security checksum build\app.exe 9f86d081884c7d659a2feaa0c55ad015a3bf4f1b
 
 Exits 0 on a match and 1 on a mismatch, which is what makes it useful in a CI step.
 
+For a release that published a whole checksum file rather than one digest:
+
+```
+devnest security checksum --check SHA256SUMS
+```
+
+Files listed but not downloaded are reported as missing, not failed.
+
 ## Decode something
 
 ```
@@ -168,7 +176,16 @@ devnest secret scan
 Scans the working tree for credential-shaped strings. Findings are always redacted: enough to
 locate them, never enough to use them.
 
-Exits non-zero when there are findings, so it works as a pre-commit hook or a CI gate.
+Add `--fail-on high` and it exits non-zero when something at that severity is found, which is what
+makes it a pre-commit hook or a CI gate. Without the flag, finding something is still a successful
+run.
+
+A repository that already has findings starts with a baseline, so only new ones can fail a build:
+
+```
+devnest secret scan --baseline .devnest-secrets.json --update-baseline
+devnest secret scan --baseline .devnest-secrets.json --fail-on high
+```
 
 ## Get machine-readable output
 

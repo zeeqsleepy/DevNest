@@ -723,7 +723,7 @@ Read-only. Findings are always redacted.
 | `secret test <string>` | Check whether a string would match, for tuning |
 
 Flags: `--entropy` threshold, `--exclude <pattern>` repeatable, `--rule <name>` to run a subset,
-`--fail-on <severity>`.
+`--fail-on <severity>`. `scan` alone also takes `--baseline <path>` and `--update-baseline`.
 
 `--entropy` moves the floor on the rules that match by shape, which is where a noisy report comes
 from. The rules matching a provider's prefix keep their own floor whatever is passed: `AKIA`
@@ -732,6 +732,37 @@ in `secret.entropy_threshold` rather than on every run.
 
 Exits non-zero when findings exist at or above `--fail-on`, which is what makes it usable as a
 pre-commit hook or a CI gate.
+
+### Baselines
+
+`scan` also takes `--baseline <path>` and `--update-baseline`. They are how a repository that
+already has findings starts scanning: accept what is there today, then fail only on what arrives
+after it.
+
+```bash
+devnest secret scan --baseline .devnest-secrets.json --update-baseline
+devnest secret scan --baseline .devnest-secrets.json --fail-on high
+```
+
+The first command writes the file and does not fail, whatever `--fail-on` says; the second reports
+and gates on new findings only. The path is asked for rather than assumed, because the file gets
+committed and a magic filename appearing in a repository is not a decision the tool should make.
+
+An entry is a path, a rule, and the redacted excerpt — **never a line number**, so a finding that
+moved down a file is still the same accepted finding. The file therefore holds no credential, only
+the same four characters and length the report shows, which is what makes committing it safe.
+
+Accepted findings are dropped before the result is counted, so they are out of the report, out of
+`bySeverity`, and out of the gate. Two counters say what happened: `baselined`, how many findings
+the file accepted, and `baselineStale`, how many of its entries matched nothing this run — a
+credential that was dealt with, or a file that moved. A baseline nobody prunes eventually accepts
+things that are not there.
+
+Accepting is not fixing, and the command says so. The findings are printed as they are written, so
+that accepting a page of them without reading it takes deliberate effort.
+
+`history` has no baseline. That scan is an audit of what was committed, and the answer to a
+credential in the history is rotating it, not recording that you have seen it.
 
 Matched values are never printed in full, in any output format, at any verbosity.
 

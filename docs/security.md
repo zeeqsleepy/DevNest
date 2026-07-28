@@ -313,6 +313,16 @@ long is one nobody reads to the end, which is how the finding that mattered gets
 line. The result is described as candidates, in those words, because a scanner people have learned
 to ignore protects nothing.
 
+**A baseline is the same argument applied to an old repository.** `secret scan --baseline` accepts
+the findings a project already has, so the gate fires only on what arrives afterwards; a check that
+fails on day one is a check somebody turns off in a week. The file records a path, a rule, and the
+redacted excerpt — never the value, which is what makes it safe to commit, and never a line number,
+which is what stops it forgetting on the next edit. Accepted findings leave the report and the exit
+code, so the discipline it buys is real; entries that stop matching are counted and reported, so
+the file does not quietly rot into a list of things that are no longer there. Accepting is not
+fixing, and the command prints what it accepted rather than letting a page of findings disappear
+silently.
+
 **Environment variable display** (`env vars`) masks values whose names match credential patterns
 (`*_TOKEN`, `*_SECRET`, `*_KEY`, `*_PASSWORD`, and similar). The full value is never shown, and
 there is no flag to show it: if someone needs the value, their shell already prints it.

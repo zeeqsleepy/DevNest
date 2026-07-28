@@ -39,6 +39,7 @@ devnest security password              a strong password from the system random 
 devnest security password-check --stdin  score a password and say what is wrong with it
 devnest security hash 'text'           SHA-256, SHA-512, MD5 over text, a file, or a pipe
 devnest security checksum file.zip <hash>  verify a download against its published digest
+devnest security checksum --check SHA256SUMS  verify a directory of downloads against a checksum file
 devnest security encode / decode       Base64, both alphabets
 
 devnest log analyze access.log         size, line count, detected format, read time
@@ -76,6 +77,7 @@ devnest git                            branch, remotes, counts, how idle the his
 devnest git stale --print-commands     quiet branches, with the commands to remove them
 devnest git large                      what is making the repository slow to clone
 devnest secret scan --fail-on high     credentials in the tree, as a CI gate
+devnest secret scan --baseline b.json  accept what an old repository already has, gate on new
 devnest secret history --all           credentials committed at any point, still leaked
 devnest secret rules                   every detector, its severity, its entropy floor
 ```

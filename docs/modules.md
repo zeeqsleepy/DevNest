@@ -780,8 +780,22 @@ leak. A test serialises a whole result to JSON and fails if a credential appears
 **Depends on.** `platform/fs` for the working-tree scan, `platform/proc` for history scanning. Only
 `History` takes a `Runner`, so a tree scan cannot start a process.
 
-**Later.** Baseline files so an existing repository can adopt scanning without drowning in
-historical findings.
+**Baselines shipped** as `--baseline` and `--update-baseline` on the tree scan, so a repository
+with four hundred historical candidates can start scanning without failing every run from now on.
+Three decisions carry the design. **An entry is a path, a rule, and the redacted excerpt, never a
+line number**, because a finding that moved down a file when somebody added an import is the same
+finding, and a baseline that forgets what it accepted on every edit is one nobody keeps. **The file
+holds no credential** — the excerpt is the same four characters and length a `Finding` carries,
+which is what makes it committable. **The baseline is applied before the result is counted**, so a
+severity gate sees only what is new; filtering afterwards would leave `--fail-on` firing on
+findings the project had already accepted, and a gate that always fails gets switched off.
+
+Entries that match nothing are counted and reported, because a baseline nobody prunes eventually
+accepts things that are not there. Writing one never fails the gate: the run that accepts
+everything is the run where the user has just said they know, and the findings are still printed so
+that accepting them without reading them takes deliberate effort. `history` has no baseline. A
+history scan is an audit of what was committed, and the answer to a leak in the history is
+rotation, not acceptance.
 
 **Settled: no user-supplied rules from the configuration file.** The `secret.custom_rules` key
 existed, was loaded, and was read by nothing, which is the worst arrangement available: somebody

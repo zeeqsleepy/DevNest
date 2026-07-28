@@ -327,7 +327,7 @@ Check-style commands use the exit code as their answer. Live as of Phase 7:
 | `json query` | The expression selects nothing (exit 3, not found) |
 | `json`, `yaml` | The document does not parse (exit 1, with the line and column) |
 | `port check` | The port is in use (exit 3, not found) |
-| `secret scan` | Findings exist at or above `--fail-on` (exit 1); without the flag, finding something is a successful run |
+| `secret scan` | Findings exist at or above `--fail-on` (exit 1); without the flag, finding something is a successful run. Findings a `--baseline` accepted never count, and `--update-baseline` never fails |
 | `secret history` | The same, over the history |
 
 Still planned: `hash verify` exits 1 on mismatch. Each such command documents its exit codes in its
