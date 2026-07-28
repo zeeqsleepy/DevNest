@@ -10,6 +10,12 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Fixed: the usage line for `security checksum` names both forms
+
+`devnest security checksum --help` described `--check` in its text and its examples but its usage
+line still read `<file> <hash>`, so the second form was invisible to anybody skimming for the shape
+of the command. It now reads `<file> <hash> | --check <checksum-file> [name...]`.
+
 ## [0.3.0] - 2026-07-28
 
 A minor rather than a patch: a flag was added, and `docs/release-process.md` counts flag names as

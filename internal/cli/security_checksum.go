@@ -22,7 +22,7 @@ func newSecurityChecksumCommand() *Command {
 	return &Command{
 		Name:    "checksum",
 		Summary: "Verify a file against a published digest",
-		Usage:   "devnest security checksum <file> <hash> [flags]",
+		Usage:   "devnest security checksum <file> <hash> | --check <checksum-file> [name...] [flags]",
 		Description: "Check that a file matches the digest published alongside it.\n\n" +
 			"The algorithm is worked out from the length of the digest you paste: 32 " +
 			"characters is MD5, 64 is SHA-256, 128 is SHA-512, so there is nothing to " +
