@@ -10,6 +10,10 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+## [0.3.1] - 2026-07-28
+
+A patch: help text only. No command, flag, field, or exit code changed.
+
 ### Fixed: the usage line for `security checksum` names both forms
 
 `devnest security checksum --help` described `--check` in its text and its examples but its usage
@@ -576,7 +580,8 @@ them. See `docs/roadmap.md` for what comes next.
 
 ---
 
-[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.3.0...main
+[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.3.1...main
+[0.3.1]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.1
 [0.3.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.0
 [0.2.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.2.0
 [0.1.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.1.0
