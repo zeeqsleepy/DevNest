@@ -10,6 +10,14 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-07-28
+
+A minor rather than a patch: a flag was added, and `docs/release-process.md` counts flag names as
+public surface. Nothing was removed or narrowed, so an 0.2.0 command line still means what it did.
+
+This is also the first release to reach both package channels without anyone copying a file across
+by hand — or the first to prove it cannot, which is the other reason to cut it.
+
 ### Added: verifying a whole checksum file
 
 - `devnest security checksum --check <file>`: verify against a published `SHA256SUMS` rather than
@@ -562,6 +570,7 @@ them. See `docs/roadmap.md` for what comes next.
 
 ---
 
-[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.2.0...main
+[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.3.0...main
+[0.3.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.0
 [0.2.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.2.0
 [0.1.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.1.0
