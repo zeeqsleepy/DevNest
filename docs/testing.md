@@ -113,6 +113,12 @@ Verifies the things only a real process can verify:
 - stdout contains only results; stderr contains only logs. Asserted at every verbosity level,
   because this is the contract that makes piping work and it is easy to break by accident.
 - JSON output parses and matches the expected schema.
+- **Every JSON field name is recorded and compared.** `tests/json_surface_test.go` runs each
+  command against a fixed fixture, reduces its output to sorted `path: type` lines, and compares
+  them with `testdata/json-surface.txt`. Field names are public surface, so a rename is a major
+  release; this is what makes one visible as a diff rather than as somebody's broken script.
+  The fixture is built by the test — including its own small git repository, because this
+  checkout's clone depth is CI's decision and a shallow one reports no contributors.
 - `--help` works for every command, and every command has a description and at least two examples.
 - Signal handling: send an interrupt mid-run, expect exit 5 and a clean unwind.
 - Destructive commands do nothing without `--apply`: asserted by checking the tree afterwards,

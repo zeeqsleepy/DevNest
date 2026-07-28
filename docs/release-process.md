@@ -14,7 +14,8 @@ Semantic versioning, `MAJOR.MINOR.PATCH`, with the public surface defined precis
 
 - Command names and action names.
 - Flag names and flag semantics.
-- JSON output field names, types, and structure.
+- JSON output field names, types, and structure. Recorded in `testdata/json-surface.txt` and
+  compared on every run of the end-to-end suite, so a change here is a diff a reviewer sees.
 - Exit code meanings.
 - Configuration key names and types.
 
