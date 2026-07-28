@@ -320,7 +320,7 @@ Check-style commands use the exit code as their answer. Live as of Phase 7:
 | `network ssl` | The certificate is expired, not yet valid, or untrusted |
 | `network latency` | Every attempt failed |
 | `network dns` | No records were found at all |
-| `security checksum` | The file does not match the expected digest |
+| `security checksum` | The file does not match the expected digest; with `--check`, any listed file that is present and wrong, or nothing found to check at all |
 | `security password-check` | The score is below `--min-score`, when that is set |
 | `log search` | The keyword appears nowhere in the file (exit 3, not found) |
 | `env which` | The tool name resolves to nothing on PATH (exit 3, not found) |

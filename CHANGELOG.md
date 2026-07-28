@@ -10,6 +10,32 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: verifying a whole checksum file
+
+- `devnest security checksum --check <file>`: verify against a published `SHA256SUMS` rather than
+  one pasted digest, in the format every `*sum` tool writes. Names in it are read relative to the
+  checksum file, so a directory of downloads is one command.
+- Name files after the flag to check only those. A name the checksum file does not cover is an
+  error rather than an empty result, because answering the question you asked with silence reads as
+  a pass.
+
+Each line carries its own digest, so a file mixing algorithms needs nothing said about it, and
+`--algorithm` becomes an assertion applied to every line instead of a thing to remember.
+
+A listed file that is not on disk is reported as missing rather than failed. A release publishes a
+digest for every platform it built and nobody downloads six of them, so counting the five absent
+ones as failures would make the flag useless for the one case it exists for. Nothing is given up:
+a file that is present and wrong is still a mismatch, and a run that verified nothing at all exits
+non-zero rather than reporting a clean sweep of nothing.
+
+An entry naming an absolute path, or one climbing out of the checksum file's own directory, is
+refused. A checksum file arrives from the same page as the download it vouches for, so it is
+exactly as trustworthy as the thing it is there to check.
+
+This existed on the roadmap as an after-1.0 direction. It moved up because a flag only adds
+surface, so the compatibility freeze was never what it was waiting for, and because Windows has no
+`sha256sum -c`: CertUtil hashes one file and leaves the comparing to the reader.
+
 ## [0.2.0] - 2026-07-25
 
 A minor version rather than a patch: a configuration key was removed and a flag's meaning was

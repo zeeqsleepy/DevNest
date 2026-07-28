@@ -273,13 +273,34 @@ text, and removing either would leave one of the two jobs in the wrong group.
 
 ### `security checksum`
 
-Flags: `-a, --algorithm`.
+Flags: `-a, --algorithm`, `-c, --check`.
 
 The algorithm is inferred from the digest's length (32 characters is MD5, 64 is SHA-256, 128 is
 SHA-512) so there is nothing to remember. A stated `--algorithm` that disagrees with the length is
 reported rather than quietly resolved.
 
 Both digests are printed whether or not they match. **Exits non-zero on a mismatch.**
+
+`--check` takes a whole checksum file instead of one pasted digest: the `SHA256SUMS` a release
+publishes, in the format every `*sum` tool writes. Blank lines and `#` comments are skipped; every
+other line carries its own digest, so a file mixing algorithms needs nothing said about it. Names
+are read relative to the checksum file itself, and a name that is absolute or climbs out of that
+directory is refused.
+
+```bash
+devnest security checksum --check SHA256SUMS
+devnest security checksum --check checksums.txt devnest_windows_amd64.zip
+```
+
+Name files after the flag to check only those; a name the checksum file does not cover is an error
+rather than an empty result, because answering "the file you asked about" with silence reads as a
+pass.
+
+**A listed file that is not there is missing, not failed.** A release publishes a digest for every
+platform it built and nobody downloads six of them, so treating the five absent ones as failures
+would make the flag useless for the case it exists for. Nothing is lost by it: a file that is
+present and wrong is still a mismatch, and a run that verified nothing at all exits non-zero rather
+than reporting a clean sweep of nothing.
 
 ### `security encode` / `security decode`
 
@@ -590,9 +611,8 @@ Hashing a file is `devnest file hash`; hashing text and verifying one checksum a
 security hash` and `devnest security checksum`.
 
 Two gaps were left open here and are now settled. **Verifying against a whole checksum file** (the
-`SHA256SUMS` a release publishes) is worth having and arrives as a flag on `security checksum`, not
-as a group of its own; see `roadmap.md`. It waits until after 1.0 only because adding a flag breaks
-nothing later. **Deterministic tree digests are not planned**, and that is a decision rather than a
+`SHA256SUMS` a release publishes) shipped as `--check` on `security checksum`, not as a group of
+its own. **Deterministic tree digests are not planned**, and that is a decision rather than a
 delay: see `modules.md`.
 
 ---

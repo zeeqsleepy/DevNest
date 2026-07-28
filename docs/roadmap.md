@@ -69,8 +69,8 @@ Two things moved out of this phase:
   with the first user who wants a file listing in a spreadsheet or a report in a ticket.
 - **`devnest hash` and `devnest scan size`**, as planned in Phase 0, are now `devnest file hash`
   and `devnest file size`. Both belong beside the other file operations. The two things a separate
-  `hash` command would have added are now settled: checksum file verification is a flag on
-  `security checksum` after 1.0, and tree digests are not planned.
+  `hash` command would have added are now settled: checksum file verification shipped as a flag on
+  `security checksum`, and tree digests are not planned.
 
 ## Phase 3: Network tools *(complete)*
 
@@ -327,6 +327,13 @@ Decisions worth carrying forward, recorded in `modules.md`, `security.md`, and `
 exit codes are frozen for the major version. It is not declared until the surface has been used
 enough to be confident about it, because withdrawing a promise is much harder than delaying one.
 
+## Before 1.0
+
+**Shipped since 0.2.0:** `security checksum --check`, which verifies a published `SHA256SUMS`
+rather than one pasted digest. It was listed below as an after-1.0 direction and moved up, because
+a flag only adds surface: waiting for the freeze bought nothing, and Windows still has no
+`sha256sum -c`.
+
 ## After 1.0
 
 Not commitments. Directions, in rough order of how likely they are to be worth doing.
@@ -339,11 +346,6 @@ usage shows a narrow set of keys that genuinely belong per-project, a `.devnest.
 those keys (never the safety-relevant ones) becomes reasonable. **`clean` is not among them**, and
 that is settled rather than pending: a file that travels with a clone must never widen what a
 delete command will remove. The reasoning is in `modules.md`.
-
-**Checksum file verification.** `security checksum` against a published `SHA256SUMS` rather than
-one pasted digest, in the format every `*sum` tool writes. A flag on the existing command, so it
-can land in any minor release without touching the frozen surface. Windows has no `sha256sum -c`,
-which is what makes this worth building rather than pointing at coreutils.
 
 **Scan comparison.** Diff two scans to show growth over time. Useful for tracking a repository
 that keeps getting bigger and nobody knows why.

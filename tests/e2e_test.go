@@ -307,6 +307,53 @@ func TestSecurityChecksumExitCodes(t *testing.T) {
 	}
 }
 
+// The whole point of --check is verifying a release directory the way it
+// arrives: one checksum file, some of the artefacts it lists, none of the rest.
+func TestSecurityChecksumFileExitCodes(t *testing.T) {
+	const correct = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+	directory := t.TempDir()
+	sums := filepath.Join(directory, "SHA256SUMS")
+
+	write := func(name, contents string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(directory, name), []byte(contents), 0o600); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+
+	write("good.txt", "abc")
+	write("bad.txt", "not abc")
+	write("SHA256SUMS", correct+"  good.txt\n"+
+		correct+"  bad.txt\n"+
+		correct+"  never-downloaded.txt\n")
+
+	// A file that is present and wrong fails the run.
+	got := runBinary(t, "security", "checksum", "--check", sums)
+	if got.exitCode != 1 {
+		t.Errorf("a mismatch exited %d, want 1\nstdout: %s", got.exitCode, got.stdout)
+	}
+	if !strings.Contains(got.stdout, "not found") {
+		t.Errorf("the file nobody downloaded was not reported:\n%s", got.stdout)
+	}
+
+	// Naming the one artefact you downloaded checks that one, and the file
+	// listed but absent is missing rather than failed.
+	if got := runBinary(t, "security", "checksum", "--check", sums, "good.txt"); got.exitCode != 0 {
+		t.Errorf("a matching file exited %d\nstdout: %s\nstderr: %s",
+			got.exitCode, got.stdout, got.stderr)
+	}
+
+	// Nothing verified must never read as a pass.
+	empty := filepath.Join(t.TempDir(), "SHA256SUMS")
+	if err := os.WriteFile(empty, []byte(correct+"  absent.txt\n"), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	if got := runBinary(t, "security", "checksum", "--check", empty); got.exitCode == 0 {
+		t.Error("a run that checked nothing exited 0")
+	}
+}
+
 // Hashing text and hashing a file of the same content must agree, or the two
 // paths are answering different questions under one name.
 func TestSecurityHashTextAndFileAgree(t *testing.T) {

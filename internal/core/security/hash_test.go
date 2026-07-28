@@ -39,6 +39,14 @@ func (f *fakeHasher) Resolve(path string) (string, error) {
 	return path, nil
 }
 
+func (f *fakeHasher) ReadFile(path string) ([]byte, error) {
+	content, known := f.files[path]
+	if !known {
+		return nil, errors.New(errors.CodeNotFound, "cannot read %s", path)
+	}
+	return []byte(content), nil
+}
+
 func (f *fakeHasher) Stat(path string) (fs.Entry, error) {
 	if f.statErr != nil {
 		return fs.Entry{}, f.statErr

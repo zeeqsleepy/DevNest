@@ -2,6 +2,7 @@ package security
 
 import (
 	"context"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -182,6 +183,163 @@ func TestVerifyChecksumRequiresAPath(t *testing.T) {
 	_, err := VerifyChecksum(context.Background(), newFakeHasher(), ChecksumRequest{
 		Path:     "  ",
 		Expected: abcSHA256,
+	})
+	assertCode(t, err, errors.CodeInvalidInput)
+}
+
+// The checksum file and the files it lists live in one directory, which is
+// where a release download lands.
+const sumsPath = "/dist/SHA256SUMS"
+
+// sumsHasher builds a directory holding a checksum file and the files it
+// names, keyed the way the module will look them up.
+func sumsHasher(contents string, files map[string]string) *fakeHasher {
+	hasher := newFakeHasher().add(sumsPath, contents)
+	for name, content := range files {
+		hasher.add(filepath.Join(filepath.Dir(sumsPath), name), content)
+	}
+	return hasher
+}
+
+func verifySums(t *testing.T, hasher Hasher, only ...string) ChecksumFileResult {
+	t.Helper()
+	result, err := VerifyChecksumFile(context.Background(), hasher, ChecksumFileRequest{
+		Path: sumsPath,
+		Only: only,
+	})
+	if err != nil {
+		t.Fatalf("VerifyChecksumFile: %v", err)
+	}
+	return result
+}
+
+func TestVerifyChecksumFileChecksEveryEntry(t *testing.T) {
+	hasher := sumsHasher(
+		abcSHA256+"  first.zip\n"+
+			abcSHA256+" *second.zip\n",
+		map[string]string{"first.zip": "abc", "second.zip": "not abc"},
+	)
+
+	result := verifySums(t, hasher)
+
+	if result.Matched != 1 || result.Mismatched != 1 || result.Missing != 0 {
+		t.Fatalf("result = %+v, want one match and one mismatch", result)
+	}
+	if result.Entries[0].Status != StatusMatch {
+		t.Errorf("first.zip = %q, want %q", result.Entries[0].Status, StatusMatch)
+	}
+	// A mismatch still reports what was found, so the user can compare.
+	if result.Entries[1].Actual == "" || result.Entries[1].Actual == result.Entries[1].Expected {
+		t.Errorf("second.zip = %+v, want a differing digest reported", result.Entries[1])
+	}
+}
+
+// A release publishes a digest for every platform it built and nobody
+// downloads all of them, so an absent file is missing rather than failed.
+func TestVerifyChecksumFileReportsMissingWithoutFailing(t *testing.T) {
+	hasher := sumsHasher(
+		abcSHA256+"  here.zip\n"+
+			abcSHA256+"  elsewhere.zip\n",
+		map[string]string{"here.zip": "abc"},
+	)
+
+	result := verifySums(t, hasher)
+
+	if result.Matched != 1 || result.Missing != 1 {
+		t.Fatalf("result = %+v, want one match and one missing", result)
+	}
+	if result.Entries[1].Status != StatusMissing {
+		t.Errorf("elsewhere.zip = %q, want %q", result.Entries[1].Status, StatusMissing)
+	}
+	if result.Entries[1].Actual != "" {
+		t.Errorf("a missing file reported a digest: %q", result.Entries[1].Actual)
+	}
+}
+
+// Each line carries its own digest, so a file mixing algorithms works without
+// anybody saying which is which.
+func TestVerifyChecksumFileInfersEachLineSeparately(t *testing.T) {
+	hasher := sumsHasher(
+		"# checksums for the 1.0 release\n\n"+
+			abcMD5+"  legacy.msi\n"+
+			abcSHA256+"  modern.zip\n",
+		map[string]string{"legacy.msi": "abc", "modern.zip": "abc"},
+	)
+
+	result := verifySums(t, hasher)
+
+	if result.Matched != 2 {
+		t.Fatalf("result = %+v, want both to match", result)
+	}
+	if result.Entries[0].Algorithm != string(fs.MD5) {
+		t.Errorf("legacy.msi = %q, want md5", result.Entries[0].Algorithm)
+	}
+	if result.Entries[1].Algorithm != string(fs.SHA256) {
+		t.Errorf("modern.zip = %q, want sha256", result.Entries[1].Algorithm)
+	}
+}
+
+func TestVerifyChecksumFileChecksOnlyTheNamedFiles(t *testing.T) {
+	hasher := sumsHasher(
+		abcSHA256+"  wanted.zip\n"+
+			abcSHA256+"  ignored.zip\n",
+		map[string]string{"wanted.zip": "abc", "ignored.zip": "not abc"},
+	)
+
+	// A path on the command line still finds the bare name in the list.
+	result := verifySums(t, hasher, filepath.Join("dist", "wanted.zip"))
+
+	if len(result.Entries) != 1 || result.Entries[0].Name != "wanted.zip" {
+		t.Fatalf("entries = %+v, want only wanted.zip", result.Entries)
+	}
+	if result.Matched != 1 {
+		t.Errorf("result = %+v, want one match", result)
+	}
+}
+
+// Asking about a file the checksum file does not cover must not answer with
+// silence, which would read as a pass.
+func TestVerifyChecksumFileRejectsANameItDoesNotCover(t *testing.T) {
+	hasher := sumsHasher(abcSHA256+"  listed.zip\n", map[string]string{"listed.zip": "abc"})
+
+	_, err := VerifyChecksumFile(context.Background(), hasher, ChecksumFileRequest{
+		Path: sumsPath,
+		Only: []string{"absent.zip"},
+	})
+	assertCode(t, err, errors.CodeNotFound)
+}
+
+func TestVerifyChecksumFileRejectsUnusableLines(t *testing.T) {
+	tests := map[string]string{
+		"no file name":  abcSHA256 + "\n",
+		"no digest":     "just-a-name.zip is not a digest\n",
+		"bad digest":    "zzz816bf  payload.zip\n",
+		"absolute path": abcSHA256 + "  /etc/shadow\n",
+		"traversal":     abcSHA256 + "  ../../.ssh/id_rsa\n",
+		"backslash":     abcSHA256 + `  ..\..\secrets.txt` + "\n",
+		"empty file":    "# nothing but a comment\n",
+	}
+
+	for name, contents := range tests {
+		t.Run(name, func(t *testing.T) {
+			_, err := VerifyChecksumFile(context.Background(), sumsHasher(contents, nil),
+				ChecksumFileRequest{Path: sumsPath})
+			assertCode(t, err, errors.CodeInvalidInput)
+		})
+	}
+}
+
+func TestVerifyChecksumFileRequiresAPath(t *testing.T) {
+	_, err := VerifyChecksumFile(context.Background(), newFakeHasher(), ChecksumFileRequest{})
+	assertCode(t, err, errors.CodeInvalidInput)
+}
+
+func TestVerifyChecksumFileHonoursAnExplicitAlgorithm(t *testing.T) {
+	hasher := sumsHasher(abcSHA256+"  payload.zip\n", map[string]string{"payload.zip": "abc"})
+
+	_, err := VerifyChecksumFile(context.Background(), hasher, ChecksumFileRequest{
+		Path:      sumsPath,
+		Algorithm: fs.MD5,
 	})
 	assertCode(t, err, errors.CodeInvalidInput)
 }

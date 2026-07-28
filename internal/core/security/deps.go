@@ -17,6 +17,10 @@ type Hasher interface {
 	Resolve(path string) (string, error)
 	// Stat describes one path.
 	Stat(path string) (fs.Entry, error)
+	// ReadFile returns a whole file. It is here for the checksum file, which
+	// is a list of digests small enough to hold: everything hashed still
+	// streams.
+	ReadFile(path string) ([]byte, error)
 	// Digest hashes a file in a single pass.
 	Digest(ctx context.Context, path string, algorithms []fs.Algorithm) ([]fs.Checksum, error)
 	// DigestReader hashes any stream, which is how text input is handled

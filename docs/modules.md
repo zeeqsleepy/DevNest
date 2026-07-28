@@ -258,11 +258,16 @@ is a strange place to look for the digest of four files in a release directory. 
 anything: the cost of keeping both is one extra line in the help output, not a second
 implementation.
 
-**Later.** Verifying a file against a whole checksum file rather than one pasted digest: the
-`SHA256SUMS` a release publishes, in the format every `*sum` tool writes. It belongs here as a flag
-on `VerifyChecksum`'s request, reusing `DigestReader` and `AlgorithmForLength`, and it earns its
+**Checksum file verification shipped** as `VerifyChecksumFile`, behind `--check`. It earns its
 place because Windows has no `sha256sum -c`: CertUtil hashes one file and leaves the comparing to
-the reader. Also an option to check a password against a breach corpus without sending it anywhere
+the reader. Two decisions are worth carrying: a listed file that is absent is **missing rather than
+failed**, because a release publishes a digest per platform and nobody downloads all of them, and
+that costs nothing since a file present and wrong is still a mismatch; and a **name pointing out of
+the checksum file's own directory is refused**, since the list is exactly as trustworthy as the
+download it vouches for. The module gained one dependency for it, `ReadFile`, which is the checksum
+file itself — everything hashed still streams.
+
+**Later.** An option to check a password against a breach corpus without sending it anywhere
 (the k-anonymity range API does this), which would be genuinely useful but makes a network call
 from a module whose selling point is that it does not.
 
@@ -579,8 +584,8 @@ digest implementation itself is in `platform/fs`, which is why one module can ha
 and another can hash a string without either owning a copy of it.
 
 The two items this module was going to add beyond that are settled: **checksum file verification**
-is worth building and goes to `core/security` as a flag, not to a module of its own; **tree
-digests** are not planned at all. Both are argued where they landed, under `core/security` above.
+shipped in `core/security` as a flag, not as a module of its own; **tree digests** are not planned
+at all. Both are argued where they landed, under `core/security` above.
 
 The rest of the original plan is already shipped, with two deliberate reductions: the algorithms
 are MD5, SHA-256, and SHA-512, since SHA-1 and CRC32 answer questions nobody asks of a developer
