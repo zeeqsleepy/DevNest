@@ -334,3 +334,48 @@ func TestVersionFlagOnRootRunsTheVersionCommand(t *testing.T) {
 		t.Errorf("stdout = %q, want the version listing", got.stdout)
 	}
 }
+
+// --check runs against the real filesystem, so it is exercised here rather
+// than against a fake: the point of the flag is a directory of downloads.
+func TestSecurityChecksumCheckRunsOverADirectory(t *testing.T) {
+	const abc = "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+
+	directory := t.TempDir()
+	write := func(name, contents string) {
+		t.Helper()
+		if err := os.WriteFile(filepath.Join(directory, name), []byte(contents), 0o600); err != nil {
+			t.Fatalf("write %s: %v", name, err)
+		}
+	}
+
+	write("good.txt", "abc")
+	write("bad.txt", "not abc")
+	write("SHA256SUMS", abc+"  good.txt\n"+abc+"  bad.txt\n"+abc+"  never-fetched.txt\n")
+	sums := filepath.Join(directory, "SHA256SUMS")
+
+	// A file that is present and wrong fails the run; the one nobody
+	// downloaded is reported as missing and does not.
+	got := exec(t, nil, append(isolated(t), "security", "checksum", "--check", sums)...)
+	if errors.CodeOf(got.err) != errors.CodeCheckFailed {
+		t.Errorf("code = %q, want %q", errors.CodeOf(got.err), errors.CodeCheckFailed)
+	}
+	if !strings.Contains(got.stdout, "missing") {
+		t.Errorf("stdout = %q, want the missing file reported", got.stdout)
+	}
+
+	// Naming the artefact you actually downloaded checks that one alone.
+	got = exec(t, nil, append(isolated(t), "security", "checksum", "--check", sums, "good.txt")...)
+	if got.err != nil {
+		t.Fatalf("a matching file failed: %v", got.err)
+	}
+
+	// Nothing verified must never read as a pass.
+	elsewhere := filepath.Join(t.TempDir(), "SHA256SUMS")
+	if err := os.WriteFile(elsewhere, []byte(abc+"  absent.txt\n"), 0o600); err != nil {
+		t.Fatalf("write fixture: %v", err)
+	}
+	got = exec(t, nil, append(isolated(t), "security", "checksum", "--check", elsewhere)...)
+	if errors.CodeOf(got.err) != errors.CodeNotFound {
+		t.Errorf("code = %q, want %q", errors.CodeOf(got.err), errors.CodeNotFound)
+	}
+}

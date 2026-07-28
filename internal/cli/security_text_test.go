@@ -135,6 +135,70 @@ func TestChecksumTextShowsBothDigests(t *testing.T) {
 	}
 }
 
+func checksumFileFixture() security.ChecksumFileResult {
+	return security.ChecksumFileResult{
+		Source: "/downloads/SHA256SUMS",
+		Entries: []security.ChecksumEntry{
+			{Name: "good.zip", Algorithm: "sha256", Status: security.StatusMatch, Bytes: 1024},
+			{Name: "bad.zip", Algorithm: "sha256", Status: security.StatusMismatch, Bytes: 2048},
+			{Name: "never-fetched.zip", Algorithm: "md5", Status: security.StatusMissing},
+		},
+		Matched: 1, Mismatched: 1, Missing: 1,
+	}
+}
+
+func TestChecksumFileTextShowsEveryEntryAndTheTally(t *testing.T) {
+	got := render(t, checksumFileText(checksumFileFixture()))
+
+	for _, want := range []string{
+		"good.zip", "bad.zip", "never-fetched.zip",
+		security.StatusMatch, security.StatusMismatch, security.StatusMissing,
+		"1 matched, 1 did not, 1 not found",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("output = %q, want it to contain %q", got, want)
+		}
+	}
+}
+
+// A missing file has no size, and printing "0 B" for one would read as an
+// empty file that was actually checked.
+func TestChecksumFileRowsLeaveAMissingFileWithoutASize(t *testing.T) {
+	rows := checksumFileRows(checksumFileFixture())
+
+	if len(rows) != 3 || len(rows[0]) != len(checksumFileColumns()) {
+		t.Fatalf("rows = %v, want three rows matching the columns", rows)
+	}
+	if rows[0][3] == "" {
+		t.Errorf("the checked file lost its size: %v", rows[0])
+	}
+	if rows[2][3] != "" {
+		t.Errorf("the missing file was given a size: %v", rows[2])
+	}
+
+	table := checksumFileTable(checksumFileFixture())()
+	if len(table.Rows) != 3 || len(table.Columns) != 4 {
+		t.Errorf("table = %+v, want the same rows behind --output csv", table)
+	}
+}
+
+func TestChosenAlgorithmDefaultsToInference(t *testing.T) {
+	// Empty means "work it out from the digest", not "sha256".
+	chosen, err := chosenAlgorithm("")
+	if err != nil || chosen != "" {
+		t.Errorf("chosenAlgorithm(\"\") = %q, %v", chosen, err)
+	}
+
+	chosen, err = chosenAlgorithm("md5")
+	if err != nil || chosen != fs.MD5 {
+		t.Errorf("chosenAlgorithm(\"md5\") = %q, %v", chosen, err)
+	}
+
+	if _, err := chosenAlgorithm("sha3"); err == nil {
+		t.Error("an unknown algorithm was accepted")
+	}
+}
+
 func TestDecodeTextPrintsPrintableValues(t *testing.T) {
 	result := security.DecodeResult{
 		Decoded: "hello world", Bytes: 11, Printable: true, Alphabet: "standard",
