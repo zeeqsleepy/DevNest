@@ -34,6 +34,7 @@ devnest network latency example.com    min, average, median, max over several at
 devnest network ping example.com       is the host reachable (TCP probe)
 devnest network dns example.com        A, AAAA, CNAME, MX, TXT, NS
 devnest network ssl example.com        issuer, expiry, days left, trust status
+devnest network scan example.com       which ports are open, what they are probably for
 
 devnest security password              a strong password from the system random source
 devnest security password-check --stdin  score a password and say what is wrong with it

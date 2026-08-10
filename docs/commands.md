@@ -136,6 +136,7 @@ The only commands in DevNest that open a socket.
 | `network ping <host>` | Is the host reachable (TCP) |
 | `network dns <domain>` | A, AAAA, CNAME, MX, TXT, NS records |
 | `network ssl <host>` | Certificate issuer, expiry, trust status |
+| `network scan <host>` | Which TCP ports are listening, and what they are probably for |
 
 Shared flags: `--timeout`, `--insecure` (not on `ssl`), and where relevant `--attempts`,
 `--interval`, `--port`. Defaults come from `[network]` in the configuration.
@@ -208,6 +209,38 @@ something is wrong with one. **Exits 1 when the certificate is expired, not yet 
 untrusted.** Expiring soon is a warning, not a failure; the certificate still works.
 
 There is no `--insecure` flag here and none is needed.
+
+### `network scan`
+
+Flags: `-p, --ports <spec>` (default: the curated common set), `--concurrency` (default 100),
+`--probe-timeout` (default `3s`), plus the shared `--timeout`.
+
+Finds which TCP ports a host is listening on, across any hosts you point it at. `--ports` takes
+numbers and ranges separated by commas: `22,80,443`, `8000-8010`, or `1-1024`.
+
+**This is a connect scan, not a SYN scan.** Every port gets a normal TCP connection attempt and a
+success means the service accepted it. The half-open packets a SYN scan sends need a raw socket and
+therefore administrator rights, and DevNest never asks for elevation — the same decision that makes
+`network ping` TCP rather than ICMP.
+
+Three outcomes are reported. A port that accepts the connection is **open**; a port that refuses it
+is **closed**; a port that stays silent until the probe timeout is **filtered**, which is how a
+host that drops packets differs from one that rejects them. The three counts always add up to the
+total, because every port is probed exactly once.
+
+The service name next to an open port comes from a static registry of well-known ports, never from
+connecting to the service to find out, so it is a hint rather than a detection: an FTP server moved
+to port 7000 is still reported as having port `7000` open, with no made-up service.
+
+Probes run in parallel under a bounded worker pool. Scanning is quick, and it opens at most
+`--concurrency` connections at once — a default of 100, capped at 512 — because a sweep that opens
+thousands of sockets at once looks like an attack to the machine it is pointed at, rude even when
+the machine belongs to you. The probe timeout is per port, so one silent port cannot hold the scan
+open past `--probe-timeout`, and the shared `--timeout` bounds the whole run.
+
+**A host that cannot be resolved exits 3** (the run would answer questions about nothing).
+Otherwise a scan that completes is a successful run whatever it found: finding nothing open is the
+answer, not a failure, and a completely silent host reports its ports as filtered.
 
 ---
 

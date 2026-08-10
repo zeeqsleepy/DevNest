@@ -65,6 +65,12 @@ The `network` group shares these:
 | `--attempts <n>` | `network.attempts` | How many measurements to take (`latency`, `ping`) |
 | `--interval <duration>` | `network.interval_ms` | Pause between attempts (`latency`, `ping`) |
 | `--port <n>` | 443 | TCP port (`ping`, `ssl`) |
+| `--ports <spec>` | the common set | Ports and ranges to probe, for example `22,80,443` or `8000-8010` (`scan`) |
+| `--concurrency <n>` | 100 | How many probes `scan` runs at once |
+
+`scan` also takes `--probe-timeout <duration>` (default `3s`), the per-port patience for a scan,
+and the shared `--timeout` bounds a whole scan. A port that stays silent until the probe timeout is
+reported as filtered rather than closed.
 
 `--insecure` is not offered on `devnest network ssl`, and none is needed: inspecting a broken
 certificate is what that command does, and it does so without disabling anything the user did not
@@ -317,6 +323,7 @@ Check-style commands use the exit code as their answer. Live as of Phase 7:
 |---|---|
 | `network monitor` | The site is down, or slower than `--max-response` |
 | `network ping` | The host never answered |
+| `network scan` | The host could not be resolved (exit 3); a completed scan succeeds whatever it found |
 | `network ssl` | The certificate is expired, not yet valid, or untrusted |
 | `network latency` | Every attempt failed |
 | `network dns` | No records were found at all |

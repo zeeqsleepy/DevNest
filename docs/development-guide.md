@@ -343,7 +343,7 @@ Quick orientation; full detail in `folder-structure.md`.
 cmd/devnest/           entrypoint: argv, signals, exit code. Nothing else.
 internal/cli/          command tree, flags, help, wiring, the only place that parses argv
 internal/core/file/    organise, duplicate, rename, filter, size, hash
-internal/core/network/ monitor, http, latency, ping, dns, ssl
+internal/core/network/ monitor, http, latency, ping, dns, ssl, scan
 internal/core/security/ password, password-check, hash, checksum, encode, decode
 internal/core/log/     analyze, http, errors, status, top, search, stats
 internal/core/env/     summary, list, path, which, vars

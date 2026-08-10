@@ -188,6 +188,10 @@ func TestNetworkRejectsBadInputWithoutConnecting(t *testing.T) {
 		{"bad record type", []string{"network", "dns", "example.com", "--type", "SOA"}},
 		{"bad header", []string{"network", "http", "example.com", "--header", "no-colon"}},
 		{"empty label", []string{"network", "dns", "example..com"}},
+		{"scan without a host", []string{"network", "scan"}},
+		{"scan with a reversed range", []string{"network", "scan", "example.com", "--ports", "80-10"}},
+		{"scan with an out-of-range port", []string{"network", "scan", "example.com", "--ports", "70000"}},
+		{"scan with a nonsense port", []string{"network", "scan", "example.com", "--ports", "http"}},
 	}
 
 	for _, test := range tests {
@@ -413,7 +417,7 @@ func TestNetworkGroupHelp(t *testing.T) {
 	if got.exitCode != 0 {
 		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
 	}
-	for _, name := range []string{"monitor", "http", "latency", "ping", "dns", "ssl"} {
+	for _, name := range []string{"monitor", "http", "latency", "ping", "dns", "ssl", "scan"} {
 		if !strings.Contains(got.stdout, name) {
 			t.Errorf("group help does not list %q:\n%s", name, got.stdout)
 		}

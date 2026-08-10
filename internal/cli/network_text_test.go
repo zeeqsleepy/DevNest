@@ -391,3 +391,61 @@ func TestDurationMsFlagValue(t *testing.T) {
 		}
 	}
 }
+
+func TestScanTextListsOpenPorts(t *testing.T) {
+	result := network.ScanResult{
+		Host:      "example.com",
+		Addresses: []string{"93.184.216.34"},
+		Open: []network.OpenPort{
+			{Port: 22, Service: "ssh", ResponseMs: 12},
+			{Port: 443, Service: "https", ResponseMs: 30},
+		},
+		OpenCount: 2, ClosedCount: 60, FilteredCount: 0,
+		TotalPorts: 62, DurationMs: 800,
+	}
+
+	got := render(t, scanText(result))
+	for _, want := range []string{
+		"93.184.216.34", "22", "ssh", "443", "https",
+		"62 ports scanned", "2 open", "60 closed",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("output = %q, want it to contain %q", got, want)
+		}
+	}
+}
+
+// The table carries the service name next to the port, but a port the registry
+// does not know must not get an invented name — it gets a dash instead.
+func TestScanTextReportsAnUnknownServiceAsADash(t *testing.T) {
+	result := network.ScanResult{
+		Host:      "example.com",
+		Addresses: []string{"93.184.216.34"},
+		Open: []network.OpenPort{
+			{Port: 62000, ResponseMs: 8},
+		},
+		OpenCount: 1, TotalPorts: 1,
+	}
+
+	got := render(t, scanText(result))
+	if !strings.Contains(got, "62000  -") {
+		t.Errorf("output = %q, want the service cell to show a plain dash", got)
+	}
+	if strings.Contains(got, "no-such-service") {
+		t.Errorf("output = %q, an invented service name was printed", got)
+	}
+}
+
+func TestScanTextReportsANoOpenPortsRun(t *testing.T) {
+	result := network.ScanResult{
+		Host: "example.com", Addresses: []string{"93.184.216.34"},
+		ClosedCount: 50, TotalPorts: 50, DurationMs: 400,
+	}
+
+	got := render(t, scanText(result))
+	for _, want := range []string{"No open ports were found.", "50 closed"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("output = %q, want it to contain %q", got, want)
+		}
+	}
+}

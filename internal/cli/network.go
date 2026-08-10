@@ -17,7 +17,8 @@ func newNetworkCommand() *Command {
 		Summary: "Inspect and test network resources",
 		Usage:   "devnest network <command> [target] [flags]",
 		Description: "Check whether a site is up, inspect an HTTP exchange, measure latency, " +
-			"probe a host, look up DNS records, and inspect a TLS certificate.\n\n" +
+			"probe a host, look up DNS records, inspect a TLS certificate, and scan for " +
+			"open ports.\n\n" +
 			"These are the only commands in DevNest that open a network connection. " +
 			"Every one of them is bounded by a timeout, and a failure to reach " +
 			"something is reported rather than treated as a crash.",
@@ -28,6 +29,7 @@ func newNetworkCommand() *Command {
 			newNetworkPingCommand(),
 			newNetworkDNSCommand(),
 			newNetworkSSLCommand(),
+			newNetworkScanCommand(),
 		},
 	}
 }

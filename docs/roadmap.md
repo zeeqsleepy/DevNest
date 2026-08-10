@@ -339,6 +339,14 @@ reason: a flag only adds surface, so waiting for the compatibility freeze bought
   scanner an old project can use and one it cannot: a check that fails on day one is a check
   somebody turns off in a week.
 
+**Shipped since 0.1.0.** `network scan`, a TCP connect scan of a host's ports, was added early
+because the network group was the natural home for it and it shares the ping decision rather than
+complicating it: a connect scan needs no raw socket and therefore no elevation, parallelism is
+bounded and capped so a scan does not look like an attack, and service names come from a static
+registry rather than from connecting to the service. It deliberately stops short of version
+detection, banner grabbing, and every SYN-scan technique, which remain out of scope; the reasoning
+is in `modules.md`.
+
 ## After 1.0
 
 Not commitments. Directions, in rough order of how likely they are to be worth doing.

@@ -95,8 +95,9 @@ package below the module layer; two consumers inside one package do not justify 
 
 ### `core/network`: networking *(implemented)*
 
-**Owns.** Six operations: checking whether a site is up, inspecting an HTTP exchange, measuring
-latency, probing a host, looking up DNS records, and inspecting a TLS certificate.
+**Owns.** Seven operations: checking whether a site is up, inspecting an HTTP exchange, measuring
+latency, probing a host, looking up DNS records, inspecting a TLS certificate, and scanning a host
+for open ports.
 
 **Dependencies, and why there are four.** `Requester`, `Resolver`, `Prober`, and `Inspector`, one
 per kind of network operation. Unlike the file module, whose operations all reach for the same
@@ -111,6 +112,7 @@ DNS lookup implements one method rather than six.
 | `Fetch` | `Requester` | One request, reported in full: status, headers, timing, redirects, TLS |
 | `Latency` | `Requester` | Repeated measurements reduced to min, average, median, and maximum |
 | `Ping` | `Prober` | Repeated TCP connections: reachability, loss, timing |
+| `Scan` | `Prober` | Parallel TCP connect probe of many ports: open, closed, filtered |
 | `Lookup` | `Resolver` | A, AAAA, CNAME, MX, TXT, and NS records |
 | `Inspect` | `Inspector` | Certificate issuer, subject, expiry, days remaining, trust status |
 
@@ -131,6 +133,17 @@ settings, which is not a foundation for a cross-platform tool.
 A TCP probe also answers the question people usually mean: plenty of hosts drop ICMP while
 accepting connections on 443 perfectly well. Every result carries `method: "tcp"` and every
 rendering says so, because a reader needs to know which question was answered.
+
+**Scan is the same probe, parallelised, over many ports.** It reuses `Prober` rather than
+inventing a scanner interface, and it inherits the ping decision: a connect scan with an ordinary
+TCP dial, never a half-open SYN scan, which needs a raw socket and therefore elevation. The
+distinctions it adds are about reporting. A port that refuses is **closed**, a port that stays
+silent until the probe timeout is **filtered** (a firewall dropping packets, told apart from a host
+saying no), and the three counts must add up to the total because every port is probed once.
+Concurrency is bounded by default and capped, because a sweep that opens thousands of sockets at
+once looks like an attack to the machine it is pointed at. The service names come from a static
+port registry, not from banner grabbing or any other connecting read, so the interface stays
+probe-only and the names stay hints.
 
 **Certificate inspection deliberately handshakes without verifying.** A verifying handshake fails
 and returns an error instead of the certificate, which is useless for the one command whose whole
