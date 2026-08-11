@@ -10,6 +10,34 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: network port scanning
+
+- `devnest network scan <host>`: find which TCP ports a host is listening on, in
+  parallel, with `--ports` for a list or range and `--concurrency` to bound how
+  many probes run at once.
+
+This is a connect scan, not a SYN scan: every port gets a normal TCP connection
+attempt, a success means the service accepted the connection, and nothing is
+sent that needs a raw socket or administrator rights. DevNest never asks for
+elevation, the same decision that makes `network ping` TCP rather than ICMP.
+
+Three outcomes are reported. A port that accepts the connection is **open**, a
+port that refuses it is **closed**, and a port that stays silent until the probe
+timeout is **filtered** — which is how a host that drops packets differs from
+one that rejects them. The three counts always add up to the total, because
+every port is probed exactly once.
+
+The service name next to an open port comes from a static registry of
+well-known ports, never from connecting to the service to find out, so it is a
+hint rather than a detection: an FTP server moved to port 7000 is still reported
+as having port `7000` open, with no made-up service.
+
+Probes run in parallel under a worker pool that is bounded by default and capped
+(100, at most 512), because a sweep that opens thousands of sockets at once
+looks like an attack to the machine it is pointed at. A host that cannot be
+resolved exits 3; otherwise a scan that completes is a successful run whatever
+it found, because finding nothing open is the answer, not a failure.
+
 ## [0.4.0] - 2026-07-28
 
 A minor rather than a patch: two flags and two JSON counters were added, and
