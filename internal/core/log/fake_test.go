@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/devnest/devnest/internal/errors"
@@ -18,6 +19,10 @@ import (
 // identically on every platform. The sample logs in testdata are loaded
 // through it, so the fixtures are realistic while the tests stay in memory.
 type fakeReader struct {
+	// mu guards the maps because a Follow test can grow the file from the
+	// test goroutine while Follow reads it from another, and the race detector
+	// has exactly one word for concurrent map access.
+	mu       sync.RWMutex
 	files    map[string]string
 	dirs     map[string]bool
 	failOpen map[string]error
@@ -33,6 +38,8 @@ func newFakeReader() *fakeReader {
 
 // with places a file with the given contents.
 func (f *fakeReader) with(path, content string) *fakeReader {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.files[filepath.Clean(path)] = content
 	return f
 }
@@ -40,11 +47,15 @@ func (f *fakeReader) with(path, content string) *fakeReader {
 // adjust replaces a file's contents, the way a running program appends to a
 // log between polls. It also lets a test shrink a file to exercise rotation.
 func (f *fakeReader) adjust(path, content string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.files[filepath.Clean(path)] = content
 }
 
 // withDir places a directory, so the "that is a directory" path can be tested.
 func (f *fakeReader) withDir(path string) *fakeReader {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	f.dirs[filepath.Clean(path)] = true
 	return f
 }
@@ -57,6 +68,8 @@ func (f *fakeReader) Resolve(path string) (string, error) {
 }
 
 func (f *fakeReader) Stat(path string) (fs.Entry, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	clean := filepath.Clean(path)
 	if f.dirs[clean] {
 		return fs.Entry{Path: clean, Name: filepath.Base(clean), IsDir: true}, nil
@@ -73,6 +86,8 @@ func (f *fakeReader) Stat(path string) (fs.Entry, error) {
 }
 
 func (f *fakeReader) Open(path string) (io.ReadCloser, error) {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
 	clean := filepath.Clean(path)
 	if err, failing := f.failOpen[clean]; failing {
 		return nil, err
@@ -81,6 +96,9 @@ func (f *fakeReader) Open(path string) (io.ReadCloser, error) {
 	if !seen {
 		return nil, errors.New(errors.CodeNotFound, "cannot read %s", clean)
 	}
+	// Open hands back a snapshot of the content at this moment. Later calls to
+	// adjust change the map for the next read; this reader stays on what it
+	// was handed, which is also what real filesystem semantics would be.
 	return io.NopCloser(strings.NewReader(content)), nil
 }
 

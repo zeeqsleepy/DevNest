@@ -5,12 +5,50 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/devnest/devnest/internal/errors"
 	"github.com/devnest/devnest/internal/platform/fs"
 )
+
+// followLog collects the batches a Follow run reports. Follow runs on its own
+// goroutine while the test reads what it produced, so every access goes
+// through the mutex; without it the race detector would flag the test, and a
+// test that cannot run under -race is a test that reads nothing about itself.
+type followLog struct {
+	mu      sync.Mutex
+	batches [][]string
+}
+
+func (f *followLog) add(batch []string) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.batches = append(f.batches, batch)
+}
+
+func (f *followLog) contains(substring string) bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return strings.Contains(f.joinLocked(), substring)
+}
+
+func (f *followLog) text() string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.joinLocked()
+}
+
+func (f *followLog) joinLocked() string {
+	var builder strings.Builder
+	for _, batch := range f.batches {
+		for _, line := range batch {
+			builder.WriteString(line)
+		}
+	}
+	return builder.String()
+}
 
 // The tail shows the last Count lines that were already in the file, and then
 // every line appended after the command started.
@@ -20,30 +58,28 @@ func TestFollowSeedsItsTailAndReportsGrowth(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var batches [][]string
+	log := &followLog{}
 	done := make(chan error, 1)
 	go func() {
 		done <- Follow(ctx, reader, FollowRequest{
 			Path:     "logs/app.log",
 			Count:    2,
 			Interval: 5 * time.Millisecond,
-		}, func(lines []string) {
-			batches = append(batches, lines)
-		})
+		}, log.add)
 	}()
 
-	waitFor(t, func() bool { return len(batches) > 0 })
+	waitFor(t, func() bool { return log.contains("line 3") })
 	reader.adjust("logs/app.log", "line 1\nline 2\nline 3\nline 4\n")
-	waitFor(t, func() bool { return strings.Contains(join(batches), "line 4") })
+	waitFor(t, func() bool { return log.contains("line 4\n") })
 	reader.adjust("logs/app.log", "line 1\nline 2\nline 3\nline 4\nline 5\n")
-	waitFor(t, func() bool { return strings.Contains(join(batches), "line 5") })
+	waitFor(t, func() bool { return log.contains("line 5\n") })
 	cancel()
 
 	if err := <-done; err != nil && errors.CodeOf(err) != errors.CodeCancelled {
 		t.Fatalf("Follow: %v", err)
 	}
 
-	all := join(batches)
+	all := log.text()
 	for _, want := range []string{"line 2", "line 3", "line 4", "line 5"} {
 		if !strings.Contains(all, want+"\n") {
 			t.Errorf("line %q not reported: %q", want, all)
@@ -61,25 +97,23 @@ func TestFollowWithZeroCountShowsNothingExisting(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var batches [][]string
+	log := &followLog{}
 	done := make(chan error, 1)
 	go func() {
 		done <- Follow(ctx, reader, FollowRequest{
 			Path:     "logs/app.log",
 			Count:    0,
 			Interval: 5 * time.Millisecond,
-		}, func(lines []string) {
-			batches = append(batches, lines)
-		})
+		}, log.add)
 	}()
 
 	time.Sleep(30 * time.Millisecond)
 	reader.adjust("logs/app.log", "old 1\nold 2\nnew\n")
-	waitFor(t, func() bool { return strings.Contains(join(batches), "new") })
+	waitFor(t, func() bool { return log.contains("new\n") })
 	cancel()
 	<-done
 
-	all := join(batches)
+	all := log.text()
 	if !strings.Contains(all, "new\n") {
 		t.Errorf("new line not reported: %q", all)
 	}
@@ -95,25 +129,23 @@ func TestFollowPicksUpARotatedLog(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	var batches [][]string
+	log := &followLog{}
 	done := make(chan error, 1)
 	go func() {
 		done <- Follow(ctx, reader, FollowRequest{
 			Path:     "logs/app.log",
 			Count:    0,
 			Interval: 5 * time.Millisecond,
-		}, func(lines []string) {
-			batches = append(batches, lines)
-		})
+		}, log.add)
 	}()
 
 	time.Sleep(30 * time.Millisecond)
 	reader.adjust("logs/app.log", "fresh start\n")
-	waitFor(t, func() bool { return strings.Contains(join(batches), "fresh start") })
+	waitFor(t, func() bool { return log.contains("fresh start\n") })
 	cancel()
 	<-done
 
-	all := join(batches)
+	all := log.text()
 	if !strings.Contains(all, "fresh start\n") {
 		t.Errorf("rotated content not reported: %q", all)
 	}
@@ -152,27 +184,25 @@ func TestFollowOnARealDiskReadsOnlyWhatsNew(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 
-	var batches [][]string
+	log := &followLog{}
 	done := make(chan error, 1)
 	go func() {
 		done <- Follow(ctx, fs.System{}, FollowRequest{
 			Path:     path,
 			Count:    3,
 			Interval: 10 * time.Millisecond,
-		}, func(lines []string) {
-			batches = append(batches, lines)
-		})
+		}, log.add)
 	}()
 
-	waitFor(t, func() bool { return strings.Contains(join(batches), "start line 6") })
+	waitFor(t, func() bool { return log.contains("start line 6\n") })
 	appendFollowFixture(t, path, "appended line A\n")
-	waitFor(t, func() bool { return strings.Contains(join(batches), "appended line A") })
+	waitFor(t, func() bool { return log.contains("appended line A\n") })
 	appendFollowFixture(t, path, "appended line B\n")
-	waitFor(t, func() bool { return strings.Contains(join(batches), "appended line B") })
+	waitFor(t, func() bool { return log.contains("appended line B\n") })
 	cancel()
 	<-done
 
-	all := join(batches)
+	all := log.text()
 	want := []string{"start line 4", "start line 5", "start line 6", "appended line A", "appended line B"}
 	for _, line := range want {
 		if !strings.Contains(all, line+"\n") {
@@ -211,16 +241,6 @@ func appendFollowFixture(t *testing.T, path, content string) {
 	if _, err := file.WriteString(content); err != nil {
 		t.Fatalf("append: %v", err)
 	}
-}
-
-func join(batches [][]string) string {
-	var builder strings.Builder
-	for _, batch := range batches {
-		for _, line := range batch {
-			builder.WriteString(line)
-		}
-	}
-	return builder.String()
 }
 
 // waitFor polls a condition, so a test does not race the goroutine it seeded.
