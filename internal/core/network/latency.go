@@ -17,6 +17,10 @@ type LatencyRequest struct {
 	// Interval waits between attempts. A short pause keeps a run from looking
 	// like a burst of traffic to whoever is on the other end.
 	Interval time.Duration
+	// OnSample is called after every attempt with its result, so a caller can
+	// report progress live while a run is still measuring. It may be nil. It
+	// is called from the measuring loop, so it must not block for long.
+	OnSample func(Attempt)
 }
 
 // Attempt is one measurement.
@@ -101,6 +105,10 @@ func Latency(ctx context.Context, requester Requester, request LatencyRequest) (
 			durations = append(durations, time.Duration(sample.ResponseMs)*time.Millisecond)
 		} else {
 			result.Failed++
+		}
+
+		if request.OnSample != nil {
+			request.OnSample(sample)
 		}
 	}
 

@@ -73,6 +73,13 @@ func newNetworkPingCommand() *Command {
 				Port:     port,
 				Attempts: attemptsOf(env, attempts),
 				Interval: intervalOf(env, interval),
+				OnProbe: func(probe network.Probe) {
+					if probe.OK {
+						env.Progress(fmt.Sprintf("probe %d: %s", probe.Number, milliseconds(probe.ResponseMs)))
+					} else {
+						env.Progress(fmt.Sprintf("probe %d: failed (%s)", probe.Number, probe.Error))
+					}
+				},
 			})
 			if err != nil {
 				return err

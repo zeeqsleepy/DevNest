@@ -139,11 +139,17 @@ Shared flags: `--timeout`, `--insecure` (not on `ssl`), and where relevant `--at
 
 ### `network monitor`
 
-Flags: `--method`, `--header` (repeatable), `--expect-status`, `--max-response`, `--no-redirect`.
+Flags: `--method`, `--header` (repeatable), `--expect-status`, `--max-response`, `--no-redirect`,
+plus `--interval` and `--count`. **Exits 1 when the site is not healthy**, so it works as a cron
+entry without anyone parsing the output.
 
 Any 2xx or 3xx is healthy unless `--expect-status` says otherwise. `--max-response` marks a site
-that answered too slowly as slow, and slow counts as unhealthy. **Exits 1 when the site is not
-healthy**, so it works as a cron entry without anyone parsing the output.
+that answered too slowly as slow, and slow counts as unhealthy.
+
+Without `--interval`, this is a single check. With `--interval`, it becomes a continuous
+monitoring loop: each check is printed live as it happens, `--count` stops after that many checks,
+and without a count it runs until stopped with Ctrl+C, printing a summary of the whole series at
+the end. The exit code reflects the last check, so a site that went down and recovered exits 0.
 
 ### `network http`
 
@@ -359,12 +365,15 @@ Read-only, always. Every command takes one text log file and reads it once.
 | `log top <file>` | Most requested endpoints |
 | `log search <file> <keyword>` | Lines containing a keyword, with line numbers |
 | `log stats <file>` | Line lengths and the longest lines |
+| `log follow <file>` | Tail of the log, then every line appended to it |
 
 Nothing here loads a file into memory. Every command streams through a reused buffer, so a four
 gigabyte log costs the same resident memory as a four kilobyte one. Every result reports how long
 the read took, and the ones that parse a format report how many lines they could not read.
 
-Results are rows, so `--output csv` works on all seven.
+Results are rows, so `--output csv` works on the seven reporting commands. `log follow` is the
+exception: it streams lines, so it refuses `--output json`, `--output csv`, `--output markdown`,
+and `--export`, which have nothing to carry in an endless stream.
 
 ### `log analyze`
 

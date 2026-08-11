@@ -186,6 +186,30 @@ func TestScanFindsCredentialsByTheirShape(t *testing.T) {
 	}
 }
 
+// OnProgress reports each file as it is read, so a scan of a large tree can
+// be shown moving rather than waited on in silence.
+func TestScanReportsProgressPerFile(t *testing.T) {
+	system := newFakeFS().
+		with("a.yml", "access_key: "+awsKeyID+"\n").
+		with("b.yml", "nothing odd here\n").
+		with("c.yml", awsKeyID+"\n")
+
+	request := ScanRequest{Root: root()}
+	var progress []int
+	request.OnProgress = func(scanned int) { progress = append(progress, scanned) }
+
+	if _, err := Scan(context.Background(), system, request); err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+
+	if len(progress) != 3 {
+		t.Errorf("OnProgress called %d times, want once per file", len(progress))
+	}
+	if progress[len(progress)-1] != 3 {
+		t.Errorf("final progress = %d, want 3 files scanned", progress[len(progress)-1])
+	}
+}
+
 // The one property that matters more than any other: a credential never
 // appears in a result, in any field, in any output format.
 func TestFindingsNeverCarryTheCredential(t *testing.T) {

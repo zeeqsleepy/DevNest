@@ -151,3 +151,33 @@ func TestLatencyRejectsABadURL(t *testing.T) {
 	_, err := Latency(context.Background(), &fakeRequester{}, LatencyRequest{URL: "ftp://example.com"})
 	assertCode(t, err, errors.CodeInvalidInput)
 }
+
+// OnSample reports each attempt as it lands, so a caller can show a run
+// progressing before the summary exists.
+func TestLatencyReportsEachSampleLive(t *testing.T) {
+	requester := &fakeRequester{responses: []net.Response{
+		okResponse(200, 10), okResponse(200, 20), okResponse(200, 30),
+	}}
+
+	var seen []Attempt
+	_, err := Latency(context.Background(), requester, LatencyRequest{
+		URL:      "example.com",
+		Attempts: 3,
+		OnSample: func(sample Attempt) { seen = append(seen, sample) },
+	})
+	if err != nil {
+		t.Fatalf("Latency: %v", err)
+	}
+
+	if len(seen) != 3 {
+		t.Fatalf("OnSample called %d times, want 3", len(seen))
+	}
+	for index, sample := range seen {
+		if sample.Number != index+1 {
+			t.Errorf("sample %d has Number %d, want %d", index, sample.Number, index+1)
+		}
+		if !sample.OK {
+			t.Errorf("sample %d was reported as failed", sample.Number)
+		}
+	}
+}

@@ -13,6 +13,10 @@ type PingRequest struct {
 	Port     int
 	Attempts int
 	Interval time.Duration
+	// OnProbe is called after every probe with its result, so a caller can
+	// report progress live while a run is still in flight. It may be nil. It
+	// is called from the probe loop, so it must not block for long.
+	OnProbe func(Probe)
 }
 
 // Probe is one connection attempt.
@@ -125,6 +129,10 @@ func Ping(ctx context.Context, prober Prober, request PingRequest) (PingResult, 
 		}
 
 		result.Probes = append(result.Probes, probe)
+
+		if request.OnProbe != nil {
+			request.OnProbe(probe)
+		}
 	}
 
 	result.Reachable = result.Received > 0

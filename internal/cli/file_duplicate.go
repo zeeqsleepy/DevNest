@@ -61,6 +61,10 @@ func newFileDuplicateCommand() *Command {
 				Selection: selection.selection(env, firstPath(args)),
 				Algorithm: chosen,
 				MinBytes:  minSize,
+				OnProgress: func(hashed, total int) {
+					env.Progress(fmt.Sprintf("compared %s of %s candidates",
+						output.Count(hashed), output.Count(total)))
+				},
 			})
 			if err != nil {
 				return err

@@ -71,6 +71,10 @@ type ScanRequest struct {
 	// dropped from the result before it is counted, so a severity gate sees
 	// only what is new. The zero value accepts nothing.
 	Baseline Baseline
+	// OnProgress is called after every file examined, with how many files have
+	// been scanned so far, so a caller can show a large tree moving. It may be
+	// nil and must not block for long.
+	OnProgress func(scanned int)
 }
 
 // ScanResult is what a scan found.
@@ -180,6 +184,9 @@ func Scan(ctx context.Context, reader Reader, request ScanRequest) (ScanResult, 
 		result.FilesScanned++
 		result.Suppressed += suppressedHere
 		result.Findings = append(result.Findings, findings...)
+		if request.OnProgress != nil {
+			request.OnProgress(result.FilesScanned)
+		}
 		return nil
 	})
 	if err != nil {

@@ -10,6 +10,32 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+### Added: realtime reporting and continuous monitoring
+
+Long-running commands now report their progress live on stderr instead of going silent until they
+finish, while stdout continues to carry results only, so piped output is unchanged.
+
+- `network latency` and `network ping` print each attempt as it completes.
+- `network scan` prints every open port the moment it is found.
+- `file duplicate` prints the hashing progress, and `secret scan` prints the file count as the walk
+  moves.
+
+`devnest network monitor` can now run as a continuous check: `--interval` keeps checking at that
+cadence, `--count` stops after that many checks, and without a count it runs until you stop it.
+Each check is printed live; the final summary holds the whole series and the exit code reflects the
+last check, so a site that recovers exits 0.
+
+`devnest log follow <file>` is a `tail -f` for DevNest: it seeds from the last N lines and prints
+every line appended, reading only the bytes that are new. A rotated log is picked up from the
+start of its replacement.
+
+### Fixed: case-only renames failed on Windows
+
+`devnest file rename --lowercase` (and any rename that changed only the case of a name) reported
+every such file as "destination already exists", because on a case-insensitive filesystem the
+destination path resolves to the source file and the existence guard fired before the rename. The
+guard now recognises that a case-only destination is the same file and lets the rename proceed.
+
 ## [1.0.0] - 2026-08-12
 
 DevNest reaches 1.0. This is the release where the compatibility promise begins: command names,

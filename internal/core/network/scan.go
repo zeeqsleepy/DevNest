@@ -25,6 +25,10 @@ type ScanRequest struct {
 	// timeout is classified as filtered rather than closed, which is how a
 	// firewall that drops packets differs from a host that refuses.
 	ProbeTimeout time.Duration
+	// OnOpen is called the moment a port is found open, so a caller can show
+	// a scan progressing live. It may be nil. It is called from a scan worker
+	// as soon as the result is recorded, so it must not block for long.
+	OnOpen func(OpenPort)
 }
 
 // OpenPort is one port that answered the probe.
@@ -166,20 +170,25 @@ func Scan(ctx context.Context, prober Prober, request ScanRequest) (ScanResult, 
 						return
 					}
 					elapsed, probeErr := probe(ctx, prober, host, port, probeTimeout)
+					var opened OpenPort
 					mutex.Lock()
 					switch {
 					case probeErr == nil:
-						open = append(open, OpenPort{
+						opened = OpenPort{
 							Port:       port,
 							Service:    ServiceFor(port),
 							ResponseMs: elapsed.Milliseconds(),
-						})
+						}
+						open = append(open, opened)
 					case errors.CodeOf(probeErr) == errors.CodeTimeout:
 						filtered++
 					default:
 						closed++
 					}
 					mutex.Unlock()
+					if probeErr == nil && request.OnOpen != nil {
+						request.OnOpen(opened)
+					}
 				}
 			}
 		}()

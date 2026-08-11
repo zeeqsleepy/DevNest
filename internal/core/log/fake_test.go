@@ -37,6 +37,12 @@ func (f *fakeReader) with(path, content string) *fakeReader {
 	return f
 }
 
+// adjust replaces a file's contents, the way a running program appends to a
+// log between polls. It also lets a test shrink a file to exercise rotation.
+func (f *fakeReader) adjust(path, content string) {
+	f.files[filepath.Clean(path)] = content
+}
+
 // withDir places a directory, so the "that is a directory" path can be tested.
 func (f *fakeReader) withDir(path string) *fakeReader {
 	f.dirs[filepath.Clean(path)] = true

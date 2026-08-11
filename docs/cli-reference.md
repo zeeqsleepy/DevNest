@@ -65,10 +65,14 @@ The `network` group shares these:
 | `--timeout <duration>` | `network.timeout_ms` | Give up after this long, for example `5s` |
 | `--insecure` | off | Skip certificate verification; warns every time it is used |
 | `--attempts <n>` | `network.attempts` | How many measurements to take (`latency`, `ping`) |
-| `--interval <duration>` | `network.interval_ms` | Pause between attempts (`latency`, `ping`) |
+| `--interval <duration>` | `network.interval_ms` | Pause between attempts (`latency`, `ping`); check cadence for a monitoring loop (`monitor`) |
 | `--port <n>` | 443 | TCP port (`ping`, `ssl`) |
 | `--ports <spec>` | the common set | Ports and ranges to probe, for example `22,80,443` or `8000-8010` (`scan`) |
 | `--concurrency <n>` | 100 | How many probes `scan` runs at once |
+
+`network monitor` also takes `--count <n>`, the number of checks a monitoring loop runs before
+stopping. It is meaningful only with `--interval`: without one, `monitor` is a single check and
+`--count` is ignored. `--count` defaults to zero, which means "until you stop it".
 
 `scan` also takes `--probe-timeout <duration>` (default `3s`), the per-port patience for a scan,
 and the shared `--timeout` bounds a whole scan. A port that stays silent until the probe timeout is
@@ -79,7 +83,10 @@ certificate is what that command does, and it does so without disabling anything
 ask about.
 
 The `log` group shares less than the others, because a log command takes one file and reports on
-it. What it does share:
+it. `log follow` is the exception: it streams, so it takes the extra `--lines <n>` (how many
+existing lines to seed from, default 10), and it has no row view or envelope, so `--output json`,
+`--output csv`, `--output markdown`, and `--export` are refused with a message saying why. What it
+does share:
 
 | Flag | Default | Meaning |
 |---|---|---|
@@ -323,7 +330,7 @@ Check-style commands use the exit code as their answer. Live as of Phase 7:
 
 | Command | Exits non-zero when |
 |---|---|
-| `network monitor` | The site is down, or slower than `--max-response` |
+| `network monitor` | The site is down, or slower than `--max-response`; with `--interval`, non-zero when the **last** check is unhealthy |
 | `network ping` | The host never answered |
 | `network scan` | The host could not be resolved (exit 3); a completed scan succeeds whatever it found |
 | `network ssl` | The certificate is expired, not yet valid, or untrusted |

@@ -37,6 +37,7 @@ func newLogCommand() *Command {
 			newLogTopCommand(),
 			newLogSearchCommand(),
 			newLogStatsCommand(),
+			newLogFollowCommand(),
 		},
 	}
 }

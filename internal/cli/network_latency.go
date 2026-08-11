@@ -79,6 +79,15 @@ func newNetworkLatencyCommand() *Command {
 				Headers:  sent,
 				Attempts: attemptsOf(env, attempts),
 				Interval: intervalOf(env, interval),
+				OnSample: func(sample network.Attempt) {
+					if sample.OK {
+						env.Progress(fmt.Sprintf("attempt %d: %d in %s",
+							sample.Number, sample.StatusCode, milliseconds(sample.ResponseMs)))
+					} else {
+						env.Progress(fmt.Sprintf("attempt %d: failed (%s)",
+							sample.Number, sample.Error))
+					}
+				},
 			})
 			if err != nil {
 				return err

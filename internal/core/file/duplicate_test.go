@@ -40,6 +40,27 @@ func TestDuplicatesMatchContentNotNames(t *testing.T) {
 	}
 }
 
+// OnProgress reports each file as it is hashed, so a long search can be
+// shown moving rather than waited on in silence.
+func TestDuplicatesReportsProgressPerFile(t *testing.T) {
+	system := newFakeFS().
+		addFile(root("a.bin"), "same").
+		addFile(root("b.bin"), "same").
+		addFile(root("c.bin"), "different")
+
+	var progress []int
+	request := duplicateRequest()
+	request.OnProgress = func(hashed, total int) { progress = append(progress, hashed) }
+
+	if _, err := Duplicates(context.Background(), system, request); err != nil {
+		t.Fatalf("Duplicates: %v", err)
+	}
+
+	if len(progress) != 2 {
+		t.Errorf("OnProgress called %d times, want 2 candidates hashed", len(progress))
+	}
+}
+
 // Files of the same size but different content must not be reported.
 func TestDuplicatesDoNotMatchOnSizeAlone(t *testing.T) {
 	system := newFakeFS().

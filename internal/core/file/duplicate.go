@@ -16,6 +16,10 @@ type DuplicateRequest struct {
 	// MinBytes ignores files smaller than this. Empty files are all
 	// identical to each other, which is true and useless.
 	MinBytes int64
+	// OnProgress is called after each file is hashed, with how many have been
+	// hashed and how many size-candidates there are in total, so a caller can
+	// show a long search moving. It may be nil and must not block for long.
+	OnProgress func(hashed, total int)
 }
 
 // DuplicateGroup is one set of files with identical content.
@@ -84,6 +88,10 @@ func Duplicates(ctx context.Context, inspector Inspector, request DuplicateReque
 
 	candidates := groupBySize(files)
 	byHash := make(map[string][]Info)
+	total := 0
+	for _, sized := range candidates {
+		total += len(sized)
+	}
 
 	for _, sized := range candidates {
 		for _, file := range sized {
@@ -105,6 +113,10 @@ func Duplicates(ctx context.Context, inspector Inspector, request DuplicateReque
 
 			result.FilesHashed++
 			byHash[checksums[0].Value] = append(byHash[checksums[0].Value], file)
+
+			if request.OnProgress != nil {
+				request.OnProgress(result.FilesHashed, total)
+			}
 		}
 	}
 

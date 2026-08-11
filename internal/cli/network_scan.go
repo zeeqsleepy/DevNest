@@ -90,6 +90,13 @@ func newNetworkScanCommand() *Command {
 				Ports:        ports,
 				Concurrency:  concurrency,
 				ProbeTimeout: probeTimeout,
+				OnOpen: func(open network.OpenPort) {
+					if open.Service != "" {
+						env.Progress(fmt.Sprintf("port %d open (%s)", open.Port, open.Service))
+					} else {
+						env.Progress(fmt.Sprintf("port %d open", open.Port))
+					}
+				},
 			})
 			if err != nil {
 				return err

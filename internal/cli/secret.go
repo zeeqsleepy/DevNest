@@ -184,6 +184,9 @@ func runSecretScan(ctx context.Context, env *Env, args []string, flags secretFla
 		Entropy:      entropy,
 		IncludeTests: flags.includeTests,
 		Baseline:     baseline,
+		OnProgress: func(scanned int) {
+			env.Progress(fmt.Sprintf("scanned %s file(s)", output.Count(scanned)))
+		},
 	})
 	if err != nil {
 		return err

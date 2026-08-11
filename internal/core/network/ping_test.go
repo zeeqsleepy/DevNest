@@ -165,3 +165,31 @@ func TestPingStopsOnCancellation(t *testing.T) {
 	_, err := Ping(ctx, &fakeProber{}, PingRequest{Host: "example.com", Attempts: 4})
 	assertCode(t, err, errors.CodeCancelled)
 }
+
+// OnProbe reports each probe as it lands, so a slow host can be watched
+// rather than waited on silently.
+func TestPingReportsEachProbeLive(t *testing.T) {
+	prober := &fakeProber{
+		durations: []time.Duration{24 * time.Millisecond, 5 * time.Millisecond},
+	}
+
+	var seen []Probe
+	_, err := Ping(context.Background(), prober, PingRequest{
+		Host:     "example.com",
+		Attempts: 2,
+		OnProbe:  func(probe Probe) { seen = append(seen, probe) },
+	})
+	if err != nil {
+		t.Fatalf("Ping: %v", err)
+	}
+
+	if len(seen) != 2 {
+		t.Fatalf("OnProbe called %d times, want 2", len(seen))
+	}
+	if !seen[0].OK || seen[0].ResponseMs != 24 {
+		t.Errorf("first probe = %+v, want the scripted 24ms success", seen[0])
+	}
+	if !seen[1].OK || seen[1].Number != 2 {
+		t.Errorf("second probe = %+v, want the second success", seen[1])
+	}
+}

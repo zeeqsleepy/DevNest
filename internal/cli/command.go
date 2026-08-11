@@ -9,6 +9,7 @@ package cli
 import (
 	"context"
 	"flag"
+	"fmt"
 	"io"
 	"log/slog"
 	"strings"
@@ -82,6 +83,18 @@ type Env struct {
 func (e *Env) Warn(code errors.Code, message string, attrs ...any) {
 	e.warnings = append(e.warnings, output.Warning{Code: string(code), Message: message})
 	e.Logger.Warn(message, attrs...)
+}
+
+// Progress writes a live update to stderr as work happens, so somebody
+// watching a long run sees it move without stdout ever carrying anything but
+// the result. It is present at normal verbosity and silenced by --quiet, in
+// the same way the logger is; unlike the logger it is never formatted as a
+// structured record, because progress is for a person and not a pipeline.
+func (e *Env) Progress(message string) {
+	if e.Config.General.Verbosity == "error" {
+		return
+	}
+	fmt.Fprintln(e.Stderr, message)
 }
 
 // Emit renders a successful result: data for machines, text for people.

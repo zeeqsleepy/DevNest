@@ -276,3 +276,34 @@ func TestCommonPortsReturnsACopy(t *testing.T) {
 		t.Errorf("mutating the returned slice changed the table")
 	}
 }
+
+// OnOpen reports each port the moment it is found, so a wide scan can be
+// watched while it is still running.
+func TestScanReportsOpenPortsLive(t *testing.T) {
+	prober := &fakePortProber{
+		openPorts: map[int]time.Duration{22: 1 * time.Millisecond, 443: 1 * time.Millisecond},
+		addresses: []string{"192.0.2.10"},
+	}
+
+	var mutex sync.Mutex
+	var seen []int
+	_, err := Scan(context.Background(), prober, ScanRequest{
+		Host:         "example.com",
+		Ports:        []int{22, 80, 443},
+		ProbeTimeout: time.Second,
+		OnOpen: func(open OpenPort) {
+			mutex.Lock()
+			seen = append(seen, open.Port)
+			mutex.Unlock()
+		},
+	})
+	if err != nil {
+		t.Fatalf("Scan: %v", err)
+	}
+
+	sort.Ints(seen)
+	want := []int{22, 443}
+	if !reflect.DeepEqual(seen, want) {
+		t.Errorf("open ports reported live = %v, want %v", seen, want)
+	}
+}
