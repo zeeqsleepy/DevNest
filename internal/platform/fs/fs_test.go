@@ -289,6 +289,27 @@ func TestMoveMissingSourceIsNotFound(t *testing.T) {
 	}
 }
 
+// A rename that changes only the case of the name is legitimate on Windows,
+// where the filesystem is case-insensitive but case-preserving. The existence
+// guard must not mistake the destination for a file that is already there:
+// it is the source, spelled differently. On a case-sensitive filesystem the
+// two paths are distinct, and the move creates the new name as usual.
+func TestMoveAllowsACaseOnlyRename(t *testing.T) {
+	base := t.TempDir()
+	source := write(t, filepath.Join(base, "Foo.TXT"), "content")
+	destination := filepath.Join(base, strings.ToLower(filepath.Base(source)))
+
+	system := System{}
+	if err := system.Move(source, destination); err != nil {
+		t.Fatalf("Move: %v", err)
+	}
+
+	content, err := os.ReadFile(destination)
+	if err != nil || string(content) != "content" {
+		t.Errorf("destination = %q, %v", content, err)
+	}
+}
+
 func TestEnsureDirIsRepeatable(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "a", "b", "c")
 

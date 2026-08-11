@@ -411,13 +411,21 @@ func (s System) Writable(directory string) error {
 // delete. That fallback deletes the source, and an interruption partway
 // through loses data, which is not a trade this tool makes.
 func (s System) Move(source, destination string) error {
-	exists, err := s.Exists(destination)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return errors.New(errors.CodeConflict,
-			"destination already exists: %s", destination)
+	// On a case-insensitive filesystem a destination differing only in case
+	// resolves to the source file itself, so the existence check below would
+	// refuse a legitimate case-only rename. The rename is what changes the
+	// case; let it through. On a case-sensitive filesystem the two paths can
+	// only name the same file when they are identical, and renaming a file
+	// onto itself is the no-op the caller is asking for.
+	if !sameFile(source, destination) {
+		exists, err := s.Exists(destination)
+		if err != nil {
+			return err
+		}
+		if exists {
+			return errors.New(errors.CodeConflict,
+				"destination already exists: %s", destination)
+		}
 	}
 
 	if err := os.Rename(source, destination); err != nil {

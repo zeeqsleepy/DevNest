@@ -16,6 +16,13 @@ func pathKey(path string) string {
 	return strings.ToLower(filepath.Clean(path))
 }
 
+// sameFile reports whether two paths name the same file and no move is
+// needed. Windows resolves the destination of a case-only rename to the
+// source, so the two must be treated as the same slot on disk.
+func sameFile(a, b string) bool {
+	return pathKey(a) == pathKey(b)
+}
+
 // isHidden reports whether an entry should be treated as hidden. Windows has a
 // real hidden attribute; the leading dot is also honoured because
 // cross-platform tools write dotfiles here too.

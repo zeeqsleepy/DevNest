@@ -17,6 +17,12 @@ func pathKey(path string) string {
 	return filepath.Clean(path)
 }
 
+// sameFile reports whether two paths name the same file and no move is
+// needed. On a case-sensitive filesystem that can only be the identical path.
+func sameFile(a, b string) bool {
+	return filepath.Clean(a) == filepath.Clean(b)
+}
+
 // isHidden reports whether an entry should be treated as hidden.
 func isHidden(_, name string) bool {
 	return strings.HasPrefix(name, ".")
