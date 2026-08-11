@@ -10,6 +10,12 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-08-11
+
+A minor rather than a patch: a command, two flags, and a whole JSON surface were added, and
+`docs/release-process.md` counts command names, flag names, and JSON fields as public surface.
+Everything in 0.4.0 behaves exactly as it did.
+
 ### Added: network port scanning
 
 - `devnest network scan <host>`: find which TCP ports a host is listening on, in
@@ -641,7 +647,8 @@ them. See `docs/roadmap.md` for what comes next.
 
 ---
 
-[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.4.0...main
+[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.5.0...main
+[0.5.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.5.0
 [0.4.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.4.0
 [0.3.1]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.1
 [0.3.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.0
