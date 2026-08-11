@@ -188,8 +188,7 @@ func scanCompareTable(result scan.CompareResult) output.TableFunc {
 	return func() output.Table {
 		rows := make([][]string, 0,
 			len(result.Categories)+len(result.Languages))
-		var add func(section string, deltas []scan.CountDelta)
-		add = func(section string, deltas []scan.CountDelta) {
+		add := func(section string, deltas []scan.CountDelta) {
 			for _, delta := range deltas {
 				rows = append(rows, []string{
 					section,

@@ -195,7 +195,7 @@ func TestScanTablesAreMachineReadable(t *testing.T) {
 
 func TestScanCompareTextShowsGrowthWithSigns(t *testing.T) {
 	result := scan.CompareResult{
-		Root: "/work/api",
+		Root:        "/work/api",
 		FilesBefore: 100, FilesAfter: 150, FilesDelta: 50,
 		BytesBefore: 1000, BytesAfter: 2000, BytesDelta: 1000,
 		Categories: []scan.CountDelta{
@@ -262,4 +262,3 @@ func TestScanCompareTargetsSplitsSnapshotFromTree(t *testing.T) {
 		t.Error("no snapshot was accepted")
 	}
 }
-

@@ -116,9 +116,7 @@ func Create(ctx context.Context, request Request) (Result, error) {
 		// package look like a nested module to the Go toolchain, which stops an
 		// embed of the whole tree. The suffix is dropped so the copied file has
 		// the real name.
-		if strings.HasSuffix(relative, ".tpl") {
-			relative = strings.TrimSuffix(relative, ".tpl")
-		}
+		relative = strings.TrimSuffix(relative, ".tpl")
 
 		destination := filepath.Join(root, filepath.FromSlash(relative))
 		if err := os.MkdirAll(filepath.Dir(destination), 0o755); err != nil {

@@ -42,15 +42,15 @@ type CountDelta struct {
 type CompareResult struct {
 	Root string `json:"root"`
 
-	FilesBefore     int `json:"filesBefore"`
-	FilesAfter      int `json:"filesAfter"`
-	FilesDelta      int `json:"filesDelta"`
-	DirectoriesBefore int `json:"directoriesBefore"`
-	DirectoriesAfter  int `json:"directoriesAfter"`
-	DirectoriesDelta  int `json:"directoriesDelta"`
-	BytesBefore     int64 `json:"bytesBefore"`
-	BytesAfter      int64 `json:"bytesAfter"`
-	BytesDelta      int64 `json:"bytesDelta"`
+	FilesBefore       int   `json:"filesBefore"`
+	FilesAfter        int   `json:"filesAfter"`
+	FilesDelta        int   `json:"filesDelta"`
+	DirectoriesBefore int   `json:"directoriesBefore"`
+	DirectoriesAfter  int   `json:"directoriesAfter"`
+	DirectoriesDelta  int   `json:"directoriesDelta"`
+	BytesBefore       int64 `json:"bytesBefore"`
+	BytesAfter        int64 `json:"bytesAfter"`
+	BytesDelta        int64 `json:"bytesDelta"`
 
 	// Authored is the part of the tree somebody wrote, and how that grew.
 	AuthoredBefore      int   `json:"authoredFilesBefore"`
@@ -123,15 +123,15 @@ func Compare(ctx context.Context, inspector Inspector, request CompareRequest) (
 	return CompareResult{
 		Root: current.Root,
 
-		FilesBefore:     before.Files,
-		FilesAfter:      after.Files,
-		FilesDelta:      after.Files - before.Files,
+		FilesBefore:       before.Files,
+		FilesAfter:        after.Files,
+		FilesDelta:        after.Files - before.Files,
 		DirectoriesBefore: before.Directories,
 		DirectoriesAfter:  after.Directories,
 		DirectoriesDelta:  after.Directories - before.Directories,
-		BytesBefore:     before.Bytes,
-		BytesAfter:      after.Bytes,
-		BytesDelta:      after.Bytes - before.Bytes,
+		BytesBefore:       before.Bytes,
+		BytesAfter:        after.Bytes,
+		BytesDelta:        after.Bytes - before.Bytes,
 
 		AuthoredBefore:      before.Authored,
 		AuthoredAfter:       after.Authored,

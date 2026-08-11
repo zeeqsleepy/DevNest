@@ -40,8 +40,8 @@ var projectAllowed = map[string]bool{
 	"network.attempts":        true,
 	"network.interval_ms":     true,
 
-	"security.password_length":           true,
-	"security.password_symbols":          true,
+	"security.password_length":            true,
+	"security.password_symbols":           true,
 	"security.password_exclude_ambiguous": true,
 }
 
