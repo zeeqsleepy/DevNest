@@ -412,19 +412,29 @@ func (s System) Writable(directory string) error {
 // through loses data, which is not a trade this tool makes.
 func (s System) Move(source, destination string) error {
 	// On a case-insensitive filesystem a destination differing only in case
-	// resolves to the source file itself, so the existence check below would
-	// refuse a legitimate case-only rename. The rename is what changes the
-	// case; let it through. On a case-sensitive filesystem the two paths can
-	// only name the same file when they are identical, and renaming a file
-	// onto itself is the no-op the caller is asking for.
+	// resolves to the source file itself, so an existence check would refuse a
+	// legitimate case-only rename. sameFile settles the platforms whose path
+	// spelling always answers that (Windows by identity, the others when the
+	// two paths are literally the same), and whatever it leaves open is
+	// decided the one way that cannot lie: asking the filesystem whether the
+	// destination is the source.
 	if !sameFile(source, destination) {
 		exists, err := s.Exists(destination)
 		if err != nil {
 			return err
 		}
 		if exists {
-			return errors.New(errors.CodeConflict,
-				"destination already exists: %s", destination)
+			same, err := sameFileOnDisk(source, destination)
+			if err != nil {
+				return err
+			}
+			if !same {
+				return errors.New(errors.CodeConflict,
+					"destination already exists: %s", destination)
+			}
+			// The destination is the source: a case-only rename on a
+			// case-insensitive filesystem (the macOS default as well as
+			// Windows). Fall through and let the rename change the case.
 		}
 	}
 
@@ -432,6 +442,22 @@ func (s System) Move(source, destination string) error {
 		return wrapPath("move", source, err)
 	}
 	return nil
+}
+
+// sameFileOnDisk reports whether two paths resolve to the same file. A
+// case-only destination on a case-insensitive filesystem is that: the same
+// inode under a different spelling, which is a rename rather than the
+// overwrite the existence guard exists to stop.
+func sameFileOnDisk(source, destination string) (bool, error) {
+	left, err := os.Stat(source)
+	if err != nil {
+		return false, wrapPath("stat", source, err)
+	}
+	right, err := os.Stat(destination)
+	if err != nil {
+		return false, wrapPath("stat", destination, err)
+	}
+	return os.SameFile(left, right), nil
 }
 
 // ProtectedReason names why a path must not be operated on in bulk, or returns

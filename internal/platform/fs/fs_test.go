@@ -293,7 +293,10 @@ func TestMoveMissingSourceIsNotFound(t *testing.T) {
 // where the filesystem is case-insensitive but case-preserving. The existence
 // guard must not mistake the destination for a file that is already there:
 // it is the source, spelled differently. On a case-sensitive filesystem the
-// two paths are distinct, and the move creates the new name as usual.
+// two paths are distinct, and the move creates the new name as usual. The
+// same holds for a case-insensitive volume on macOS, where the destination
+// resolves to the source and the on-disk same-file check is what lets it
+// through.
 func TestMoveAllowsACaseOnlyRename(t *testing.T) {
 	base := t.TempDir()
 	source := write(t, filepath.Join(base, "Foo.TXT"), "content")
@@ -307,6 +310,24 @@ func TestMoveAllowsACaseOnlyRename(t *testing.T) {
 	content, err := os.ReadFile(destination)
 	if err != nil || string(content) != "content" {
 		t.Errorf("destination = %q, %v", content, err)
+	}
+}
+
+// Renaming a path onto itself is the no-op a caller ends up with after
+// normalising a name that did not need changing, and it must not be reported
+// as a conflict with "the destination exists".
+func TestMoveOntoItselfIsANoOp(t *testing.T) {
+	base := t.TempDir()
+	source := write(t, filepath.Join(base, "a.txt"), "content")
+
+	system := System{}
+	if err := system.Move(source, source); err != nil {
+		t.Fatalf("Move: %v", err)
+	}
+
+	content, err := os.ReadFile(source)
+	if err != nil || string(content) != "content" {
+		t.Errorf("source = %q, %v", content, err)
 	}
 }
 
