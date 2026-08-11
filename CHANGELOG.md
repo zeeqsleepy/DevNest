@@ -10,6 +10,61 @@ Entries describe what changed for a user, not which files were edited.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-08-12
+
+DevNest reaches 1.0. This is the release where the compatibility promise begins: command names,
+flag names, JSON field names, and exit codes are frozen for the major version.
+
+A major rather than a minor, both because the version itself is the milestone and because it
+ships the last of the after-1.0 directions from `docs/roadmap.md` ahead of the freeze.
+
+### Added: `git hotspot`
+
+`devnest git hotspot [path]`: the files a repository changes most often, as a proxy for where the
+risk concentrates. It is one pass over the log with `--name-only`, counting how many commits each
+path appears in, and `--since` narrows the window so the answer can be "what is changing now"
+rather than "what has always changed". Read-only, like every git command.
+
+### Added: `scan compare`
+
+`devnest scan compare <snapshot.json> [path]`: how a project grew between two scans. The "before"
+is a scan saved earlier with `--output json` or `--export`; the "after" is a fresh scan with the
+same walk settings. It reports the deltas — more or fewer files, larger or smaller, which
+categories grew — for a repository that keeps getting bigger and nobody knows why. Deltas are
+after minus before, so growth is positive.
+
+### Added: more toolchains in `env`
+
+Twelve more toolchains detected by `devnest env`: Perl, Swift, Kotlin, Lua, Zig, Elixir, GHC,
+Scala, Poetry, uv, Conda, Homebrew, Ninja, Meson, Subversion, Helm, Minikube, and Pulumi. Each is
+a table entry in `internal/core/env/toolchains.go` — adding one is a line, nothing else.
+
+### Added: project-local configuration
+
+A project can carry a `.devnest.toml` at its root, discovered by walking up from the working
+directory, holding a narrow set of non-safety keys: `[general]` output/color/verbosity, `[scan]`
+walk options, the `[network]` settings, and the `[security]` password defaults. Precedence is
+default < machine file < project file < environment < flag.
+
+**Safety-relevant keys are never allowed.** A file that travels with a clone must never widen what
+a delete command will remove, must never turn off a confirmation, and must never hide paths from a
+secret scan. Everything in `[clean]`, everything in `[secret]`, and `general.confirm` are refused
+with a warning when a project file tries to set them. This is the settled position from the
+roadmap, not a change of mind.
+
+### Added: `init`
+
+`devnest init <directory>` scaffolds a new project from a committed template, with `--template` to
+choose one and `--list` to show them. The templates are embedded in the binary, so a release
+download scaffolds exactly what a source build does. A scaffold never overwrites: a target that
+already contains files is refused. Two templates ship: `blank`, and `go-cli`, a starter Go command.
+
+### Notes for the 1.0 freeze
+
+- The `pkg/` surface direction stays after 1.0. Exposing a package from `internal/` now would
+  freeze an API nobody has used, and freezing an API nobody uses is how a promise stops meaning
+  anything.
+
 ## [0.5.0] - 2026-08-11
 
 A minor rather than a patch: a command, two flags, and a whole JSON surface were added, and
@@ -647,7 +702,8 @@ them. See `docs/roadmap.md` for what comes next.
 
 ---
 
-[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v0.5.0...main
+[Unreleased]: https://github.com/zeeqsleepy/DevNest/compare/v1.0.0...main
+[1.0.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v1.0.0
 [0.5.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.5.0
 [0.4.0]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.4.0
 [0.3.1]: https://github.com/zeeqsleepy/DevNest/releases/tag/v0.3.1
