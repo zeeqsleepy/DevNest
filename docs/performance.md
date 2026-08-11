@@ -1,6 +1,6 @@
 # Performance
 
-Status: every target below has a benchmark behind it as of Phase 10; the measured figures and the
+Status: every target below has a benchmark behind it as of 1.0.0; the measured figures and the
 committed baseline are in `benchmarks/baseline.txt`
 Last revised: 2026-07-25
 
@@ -100,9 +100,9 @@ a thousand files, and build output under `dist`.
 | `clean` enumeration | 10.4 ms | 42,241 | 400 ms |
 | `scan` structural summary | 176 ms | 68,680 | 500 ms |
 | `scan types` | 177 ms | 51,720 | 500 ms |
-| `scan lines` | 4.65 s | 77,181 | — |
+| `scan lines` | 4.65 s | 77,181 | - |
 | `secret scan` | 4.53 s | 161,841 | 3 s |
-| *standard library walk and read, no DevNest* | 5.53 s | 62,592 | — |
+| *standard library walk and read, no DevNest* | 5.53 s | 62,592 | - |
 
 The last row is the point of the table. The three fast operations never open a file; the two slow
 ones read every file they do not skip, and both are **faster than a plain `filepath.WalkDir` that
@@ -123,7 +123,7 @@ directly, because a benchmark should not ask a developer's disk for a gigabyte o
 | Benchmark | Throughput | Allocations | 1 GB implies | Target |
 |---|---|---|---|---|
 | SHA-256 | 1,620 MB/s | 86 | 0.6 s | 2 s |
-| SHA-256 + SHA-512 + MD5, one pass | 350 MB/s | 95 | 2.9 s | — |
+| SHA-256 + SHA-512 + MD5, one pass | 350 MB/s | 95 | 2.9 s | - |
 
 Three digests cost one read and three hash computations, which is what the shared digest helper
 exists to provide. Allocation is flat in both: the file is streamed through a fixed buffer, so a
@@ -229,8 +229,8 @@ API response has.
 | Benchmark | Time | Throughput | Allocations | Target |
 |---|---|---|---|---|
 | `json format` | 222 ms | 47 MB/s | 2,396,796 | 300 ms |
-| `json minify` | 193 ms | 54 MB/s | 2,396,793 | — |
-| `json query` | 145 ms | 72 MB/s | 2,396,797 | — |
+| `json minify` | 193 ms | 54 MB/s | 2,396,793 | - |
+| `json query` | 145 ms | 72 MB/s | 2,396,797 | - |
 
 Inside the target, and the allocation figure is the honest part: 2.4 million allocations and 211 MB
 of transient memory to reprint 10 MB. That is `encoding/json` decoding into `any`, which allocates

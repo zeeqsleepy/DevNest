@@ -1,6 +1,6 @@
 # Export System
 
-Status: implemented, Phase 10
+Status: implemented, 1.0.0
 Last revised: 2026-07-24
 
 Every command can write its result to a file as well as to the terminal. This document covers how

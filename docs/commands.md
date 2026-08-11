@@ -22,8 +22,6 @@ Available on every command, declared once on the root.
 | `-v, --verbose` | false | Debug-level logging to stderr |
 | `--no-color` | auto | Disable colour; also honours `NO_COLOR` |
 | `--config <path>` | OS config dir | Use a specific config file |
-| `--dry-run` | varies | Show what would happen, change nothing *(planned)* |
-| `-y, --yes` | false | Answer all confirmations affirmatively *(planned)* |
 | `-h, --help` | none | Help for the current command |
 | `--version` | none | Version, commit, build date, Go version |
 
@@ -218,7 +216,7 @@ numbers and ranges separated by commas: `22,80,443`, `8000-8010`, or `1-1024`.
 
 **This is a connect scan, not a SYN scan.** Every port gets a normal TCP connection attempt and a
 success means the service accepted it. The half-open packets a SYN scan sends need a raw socket and
-therefore administrator rights, and DevNest never asks for elevation — the same decision that makes
+therefore administrator rights, and DevNest never asks for elevation. That is the same decision that makes
 `network ping` TCP rather than ICMP.
 
 Three outcomes are reported. A port that accepts the connection is **open**; a port that refuses it
@@ -231,7 +229,7 @@ connecting to the service to find out, so it is a hint rather than a detection: 
 to port 7000 is still reported as having port `7000` open, with no made-up service.
 
 Probes run in parallel under a bounded worker pool. Scanning is quick, and it opens at most
-`--concurrency` connections at once — a default of 100, capped at 512 — because a sweep that opens
+`--concurrency` connections at once (a default of 100, capped at 512) because a sweep that opens
 thousands of sockets at once looks like an attack to the machine it is pointed at, rude even when
 the machine belongs to you. The probe timeout is per port, so one silent port cannot hold the scan
 open past `--probe-timeout`, and the shared `--timeout` bounds the whole run.
@@ -796,14 +794,14 @@ The first command writes the file and does not fail, whatever `--fail-on` says; 
 and gates on new findings only. The path is asked for rather than assumed, because the file gets
 committed and a magic filename appearing in a repository is not a decision the tool should make.
 
-An entry is a path, a rule, and the redacted excerpt — **never a line number**, so a finding that
+An entry is a path, a rule, and the redacted excerpt. It is **never a line number**, so a finding that
 moved down a file is still the same accepted finding. The file therefore holds no credential, only
 the same four characters and length the report shows, which is what makes committing it safe.
 
 Accepted findings are dropped before the result is counted, so they are out of the report, out of
 `bySeverity`, and out of the gate. Two counters say what happened: `baselined`, how many findings
-the file accepted, and `baselineStale`, how many of its entries matched nothing this run — a
-credential that was dealt with, or a file that moved. A baseline nobody prunes eventually accepts
+the file accepted, and `baselineStale`, how many of its entries matched nothing this run (a
+credential that was dealt with, or a file that moved). A baseline nobody prunes eventually accepts
 things that are not there.
 
 Accepting is not fixing, and the command says so. The findings are printed as they are written, so
@@ -903,7 +901,7 @@ the default is `blank`, and `go-cli` is a starter Go program.
 | `init --list` | List the available templates |
 
 A scaffold never overwrites: the target directory is created, and one that already contains files
-is refused — a template is the start of a project, not a merge.
+is refused. A template is the start of a project, not a merge.
 
 ---
 

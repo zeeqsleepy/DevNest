@@ -60,7 +60,7 @@ flags.
 
 **Only a narrow set of keys is allowed, and the safety-relevant ones are not among them.** A file
 that travels with a clone must never widen what a delete command will remove, must never turn off a
-confirmation, and must never hide paths from a secret scan — those are decisions for the machine a
+confirmation, and must never hide paths from a secret scan. Those are decisions for the machine a
 command actually runs on, not for code that arrives with a repository.
 
 Allowed keys:

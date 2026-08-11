@@ -1,6 +1,6 @@
 # FAQ
 
-Status: current as of Phase 10
+Status: current as of 1.0.0
 Last revised: 2026-07-25
 
 ## About the project
@@ -115,7 +115,7 @@ over stdio, not code loaded into DevNest.
 
 A project can carry a `.devnest.toml` at its root, discovered by walking up from the working
 directory. Its scope is deliberately narrow: presentation and inspection keys only. **Safety-relevant
-keys are never allowed** — nothing in `[clean]` or `[secret]`, and not `general.confirm` — because a
+keys are never allowed** (nothing in `[clean]` or `[secret]`, and not `general.confirm`) because a
 file that travels with a clone must never widen what a delete command will remove or turn off a
 confirmation. See `configuration.md` for the full list and the precedence order.
 

@@ -1,8 +1,8 @@
 # Quick Start
 
-Status: current as of Phase 10. Every command shown here runs, and a test runs each of
+Status: current as of 1.0.0. Every command shown here runs, and a test runs each of
 these examples against the built binary
-Last revised: 2026-07-24
+Last revised: 2026-08-12
 
 Five minutes with DevNest. Installation is in `installation.md`; this assumes `devnest` is on
 PATH.

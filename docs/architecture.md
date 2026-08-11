@@ -1,6 +1,6 @@
 # Architecture
 
-Status: implemented through Phase 10
+Status: implemented through 1.0.0
 Last revised: 2026-07-24
 
 This document describes how DevNest is put together, which layer is allowed to know about which

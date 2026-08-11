@@ -1,6 +1,6 @@
 # Testing Strategy
 
-Status: current as of Phase 10
+Status: current as of 1.0.0
 Last revised: 2026-07-25
 
 Tests exist so that changing this codebase in a year is not frightening. That goal drives every
@@ -117,7 +117,7 @@ Verifies the things only a real process can verify:
   command against a fixed fixture, reduces its output to sorted `path: type` lines, and compares
   them with `testdata/json-surface.txt`. Field names are public surface, so a rename is a major
   release; this is what makes one visible as a diff rather than as somebody's broken script.
-  The fixture is built by the test — including its own small git repository, because this
+  The fixture is built by the test, including its own small git repository, because this
   checkout's clone depth is CI's decision and a shallow one reports no contributors. A field whose
   presence depends on where the test runs rather than on what it was given is named and skipped:
   `doctor` reports the terminal it found, and a CI runner has none.

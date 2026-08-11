@@ -1,8 +1,10 @@
 # CLI Reference
 
-Status: implemented as of Phase 10, apart from the `--dry-run`, `--yes`, and `--compact` flags,
-which are marked where they appear
-Last revised: 2026-07-24
+Status: implemented as of 1.0.0, apart from the `--dry-run` and `--compact` flags,
+which are marked where they appear. The `--yes` flag is now a per-command flag on the
+commands that confirm before changing the disk (`clean`, `file organize`, `file rename`,
+`port free`)
+Last revised: 2026-08-12
 
 `commands.md` lists what the commands are. This document covers how the interface is put
 together: grammar, naming discipline, flag conventions, and the rules that keep the surface
@@ -268,10 +270,10 @@ wherever it appears.
 | `-h, --help` | none | Help for the current command |
 | `--version` | none | Version and build information |
 
-Three flags described elsewhere in this documentation are not implemented yet: `--dry-run` and
-`--yes` (see `design.md`), and `--compact`. Each arrives with the first command that has something
-to delete or confirm. A global flag that silently does nothing is worse than one that does not
-exist.
+Two flags described elsewhere in this documentation are not implemented yet: `--dry-run` (see
+`design.md`) and `--compact`. A global flag that silently does nothing is worse than one that does
+not exist. The `--yes` flag described in `design.md` is now a per-command flag on the commands
+that confirm before changing the disk: `clean`, `file organize`, `file rename`, and `port free`.
 
 There is no global `--force`: `clean` and `port free` each define one that means something specific
 to them, and a second meaning for the same word is how a destructive flag gets typed by habit.

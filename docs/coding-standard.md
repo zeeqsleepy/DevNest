@@ -1,6 +1,6 @@
 # Coding Standard
 
-Status: current as of Phase 10
+Status: current as of 1.0.0
 Last revised: 2026-07-24
 
 Style rules for DevNest's Go code. Anything the standard Go toolchain already decides (formatting,

@@ -1,6 +1,6 @@
 # Folder Structure
 
-Status: current as of Phase 10
+Status: current as of 1.0.0
 Last revised: 2026-07-25
 
 Every directory in this repository has a stated purpose. If a file does not clearly belong in one
@@ -225,7 +225,7 @@ and the comparison script. Targets are stated in `performance.md`.
 ## `templates/`
 
 Scaffolding templates for project generation. They live under `internal/core/scaffold/templates/`
-so they can be embedded into the binary with `go:embed` — a release download must scaffold
+so they can be embedded into the binary with `go:embed`. A release download must scaffold
 exactly what a source build does, and an embed cannot cross a module boundary.
 
 One subdirectory per template, each a plain tree of files that `devnest init` copies. A `.tpl`

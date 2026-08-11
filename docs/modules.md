@@ -278,7 +278,7 @@ failed**, because a release publishes a digest per platform and nobody downloads
 that costs nothing since a file present and wrong is still a mismatch; and a **name pointing out of
 the checksum file's own directory is refused**, since the list is exactly as trustworthy as the
 download it vouches for. The module gained one dependency for it, `ReadFile`, which is the checksum
-file itself — everything hashed still streams.
+file itself, and everything hashed still streams.
 
 **Later.** An option to check a password against a breach corpus without sending it anywhere
 (the k-anonymity range API does this), which would be genuinely useful but makes a network call
@@ -498,7 +498,7 @@ module does not duplicate it. It reports shape, not weight.
 **`Compare` is aggregates, not renames.** The "before" is a snapshot saved by the user (with
 `--export` or `--output json`); the "after" is a fresh scan with the same settings. It reports how
 many more files, how much larger, and which categories grew, and it does not try to follow renamed
-paths — the question it answers is "is this project getting bigger and where", not "which file
+paths. The question it answers is "is this project getting bigger and where", not "which file
 moved". Deltas are after minus before, so growth is positive. Load reads either the result envelope
 this module's commands write or a bare `SummaryResult`.
 
@@ -808,7 +808,7 @@ with four hundred historical candidates can start scanning without failing every
 Three decisions carry the design. **An entry is a path, a rule, and the redacted excerpt, never a
 line number**, because a finding that moved down a file when somebody added an import is the same
 finding, and a baseline that forgets what it accepted on every edit is one nobody keeps. **The file
-holds no credential** — the excerpt is the same four characters and length a `Finding` carries,
+holds no credential**: the excerpt is the same four characters and length a `Finding` carries,
 which is what makes it committable. **The baseline is applied before the result is counted**, so a
 severity gate sees only what is new; filtering afterwards would leave `--fail-on` firing on
 findings the project had already accepted, and a gate that always fails gets switched off.

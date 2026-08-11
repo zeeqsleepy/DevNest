@@ -158,8 +158,8 @@ failure there means deleting the release, which costs nothing before anybody has
 - `go install` works directly from the tag with no extra step.
 
 **The Homebrew tap** is `zeeqsleepy/homebrew-devnest`, created with 0.1.0 and updated by the
-release since 2026-07-25. It exists because Homebrew core requires a package to be notable — thirty
-stars, thirty forks, or seventy-five watchers, and thirty days of maintenance — and DevNest has
+release since 2026-07-25. It exists because Homebrew core requires a package to be notable (thirty
+stars, thirty forks, or seventy-five watchers, and thirty days of maintenance) and DevNest has
 none of that yet. The licence is no longer the obstacle it was: MIT qualifies, so core and the
 Linux distribution repositories are both open once the bar is cleared.
 

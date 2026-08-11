@@ -1,8 +1,8 @@
 # Troubleshooting
 
-Status: current as of Phase 10. Every command shown here runs; the issues themselves are
+Status: current as of 1.0.0. Every command shown here runs; the issues themselves are
 still partly anticipated rather than reported
-Last revised: 2026-07-24
+Last revised: 2026-08-12
 
 ## Start here
 

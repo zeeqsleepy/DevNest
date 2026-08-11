@@ -1,7 +1,7 @@
 # Security
 
-Status: every section is implemented as of 0.1.0
-Last revised: 2026-07-25
+Status: every section is implemented as of 1.0.0
+Last revised: 2026-08-12
 
 DevNest deletes files, terminates processes, reads credentials, and makes network requests. Each
 of those is a way to cause real damage. This document states how those capabilities are
@@ -316,7 +316,7 @@ to ignore protects nothing.
 **A baseline is the same argument applied to an old repository.** `secret scan --baseline` accepts
 the findings a project already has, so the gate fires only on what arrives afterwards; a check that
 fails on day one is a check somebody turns off in a week. The file records a path, a rule, and the
-redacted excerpt — never the value, which is what makes it safe to commit, and never a line number,
+redacted excerpt, never the value (which is what makes it safe to commit) and never a line number,
 which is what stops it forgetting on the next edit. Accepted findings leave the report and the exit
 code, so the discipline it buys is real; entries that stop matching are counted and reported, so
 the file does not quietly rot into a list of things that are no longer there. Accepting is not
@@ -434,7 +434,7 @@ that depends on an attacker being unable to construct a collision. The help text
 
 ## Supply chain
 
-- Dependencies are minimal and each addition is justified in writing; see `rules.md` R12–R16.
+- Dependencies are minimal and each addition is justified in writing; see `rules.md` R12 to R16.
 - Versions are pinned and `go.sum` is committed. Builds are reproducible.
 - Dependency updates are their own pull request, never bundled with a feature, so the diff is
   reviewable.

@@ -29,15 +29,15 @@ rather than "what has always changed". Read-only, like every git command.
 
 `devnest scan compare <snapshot.json> [path]`: how a project grew between two scans. The "before"
 is a scan saved earlier with `--output json` or `--export`; the "after" is a fresh scan with the
-same walk settings. It reports the deltas — more or fewer files, larger or smaller, which
-categories grew — for a repository that keeps getting bigger and nobody knows why. Deltas are
+same walk settings. It reports the deltas (more or fewer files, larger or smaller, which
+categories grew) for a repository that keeps getting bigger and nobody knows why. Deltas are
 after minus before, so growth is positive.
 
 ### Added: more toolchains in `env`
 
 Twelve more toolchains detected by `devnest env`: Perl, Swift, Kotlin, Lua, Zig, Elixir, GHC,
 Scala, Poetry, uv, Conda, Homebrew, Ninja, Meson, Subversion, Helm, Minikube, and Pulumi. Each is
-a table entry in `internal/core/env/toolchains.go` — adding one is a line, nothing else.
+a table entry in `internal/core/env/toolchains.go`; adding one is a line, nothing else.
 
 ### Added: project-local configuration
 
@@ -84,7 +84,7 @@ elevation, the same decision that makes `network ping` TCP rather than ICMP.
 
 Three outcomes are reported. A port that accepts the connection is **open**, a
 port that refuses it is **closed**, and a port that stays silent until the probe
-timeout is **filtered** — which is how a host that drops packets differs from
+timeout is **filtered**, which is how a host that drops packets differs from
 one that rejects them. The three counts always add up to the total, because
 every port is probed exactly once.
 
@@ -124,7 +124,7 @@ characters and length the report shows, because the scanner does not hold the cr
 first place, which is what makes the file safe to commit.
 
 Two counters say what the file did. `baselined` is how many findings it accepted; `baselineStale`
-is how many of its entries matched nothing this run — a credential that was dealt with, or a file
+is how many of its entries matched nothing this run: a credential that was dealt with, or a file
 that moved. A baseline nobody prunes eventually accepts things that are not there.
 
 The path is asked for rather than assumed: this file gets committed, and a magic filename appearing
@@ -148,7 +148,7 @@ A minor rather than a patch: a flag was added, and `docs/release-process.md` cou
 public surface. Nothing was removed or narrowed, so an 0.2.0 command line still means what it did.
 
 This is also the first release to reach both package channels without anyone copying a file across
-by hand — or the first to prove it cannot, which is the other reason to cut it.
+by hand, or the first to prove it cannot, which is the other reason to cut it.
 
 ### Added: verifying a whole checksum file
 
@@ -241,7 +241,7 @@ A copy taken under the old terms keeps them. Everything from here is MIT.
 `coverage`, `.gradle`, and `.dart_tool` join the directories a scan does not descend into.
 
 Scanning one ordinary Next.js project produced 291 candidates: one real, two false positives from a
-CI workflow, and **288 from inside `.next`** — every one a placeholder shipped inside a bundled
+CI workflow, and **288 from inside `.next`**, every one a placeholder shipped inside a bundled
 dependency. A report that long is one nobody reads to the end, which is how the finding at the top
 of it gets missed.
 
@@ -258,7 +258,7 @@ used enough to be confident about it.
 
 ### Added: managing the configuration
 
-- `devnest config`: every value with the layer it came from — default, file, or environment. That
+- `devnest config`: every value with the layer it came from (default, file, or environment). That
   column is the fastest answer to "why is it behaving like that".
 - `devnest config list`, `config get <key>`, `config path`, `config validate`: read what is set.
 - `devnest config set <key> <value>`, `config unset <key>`, `config init`: change it without
@@ -311,8 +311,8 @@ The report is written to be pasted into an issue: paths under the home directory
 `~` and the hostname is not reported at all. Neither helps anyone reading a stack of bug reports,
 and both identify whoever filed one.
 
-A warning is something absent that DevNest works without — git on a machine that never runs the
-git commands is the ordinary case — and does not affect the exit code. A failed check exits 1,
+A warning is something absent that DevNest works without (git on a machine that never runs the
+git commands is the ordinary case) and does not affect the exit code. A failed check exits 1,
 after the report is printed.
 
 `doctor` is the one command that still starts when the configuration file will not load, with the

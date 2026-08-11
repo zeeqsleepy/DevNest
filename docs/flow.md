@@ -1,6 +1,6 @@
 # Application Flow
 
-Status: current as of Phase 10
+Status: current as of 1.0.0
 Last revised: 2026-07-24
 
 What happens between the user pressing Enter and the process exiting. Ordering matters here: most
@@ -33,7 +33,7 @@ Ordering constraints that are easy to get wrong:
   the ones lost.
 - **Nothing expensive before step 9.** No filesystem walking, no rule set parsing, no network. The
   50 ms startup budget in `performance.md` is spent almost entirely on process and runtime
-  initialisation, and it stays that way only if steps 1–8 stay cheap. Rule sets and detection
+  initialisation, and it stays that way only if steps 1 to 8 stay cheap. Rule sets and detection
   tables load lazily, inside the command that needs them.
 - **Renderer selection before the handler runs (8).** The handler must never branch on output
   format; it hands its result to whatever renderer it was given.

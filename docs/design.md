@@ -1,6 +1,6 @@
 # Design Philosophy
 
-Status: implemented through Phase 10
+Status: implemented through 1.0.0
 Last revised: 2026-07-24
 
 `architecture.md` says how the code is arranged. This document says what we are trying to make it

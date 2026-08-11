@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Status: current as of Phase 10
+Status: current as of 1.0.0
 Last revised: 2026-07-25
 
 `development-guide.md` covers setting up and doing the work. This document covers getting a change

@@ -1,7 +1,7 @@
 # Roadmap
 
-Status: phases 0 through 10 complete; 0.1.0 released 2026-07-25
-Last revised: 2026-07-25
+Status: phases 0 through 10 complete; 1.0.0 released 2026-08-12
+Last revised: 2026-08-12
 
 Where the project is going and roughly in what order. Phases are ordered by dependency, not by
 date: a phase ships when it is done, and the ordering exists so that each phase has a working

@@ -1,6 +1,6 @@
 # Schema
 
-Status: implemented, current as of Phase 10
+Status: implemented, current as of 1.0.0
 Last revised: 2026-07-24
 
 The shapes of things: how packages are structured internally, how data moves between them, what

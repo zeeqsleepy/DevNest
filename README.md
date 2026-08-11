@@ -21,13 +21,13 @@ brew tap zeeqsleepy/devnest
 brew install --cask devnest
 ```
 
-**Linux (Debian/Ubuntu)** — or the `.rpm` for Fedora/RHEL:
+**Linux (Debian/Ubuntu)**, or the `.rpm` for Fedora/RHEL:
 ```bash
 curl -LO https://github.com/zeeqsleepy/DevNest/releases/latest/download/devnest_linux_amd64.deb
 sudo dpkg -i devnest_linux_amd64.deb
 ```
 
-**Without a package manager** — Windows, or a locked-down machine with no installer: download the
+**Without a package manager**: Windows, or a locked-down machine with no installer. Download the
 archive for your platform from the [releases page](https://github.com/zeeqsleepy/DevNest/releases),
 extract the binary, and put it on PATH. Done. No runtime, no elevation, no installer.
 
@@ -94,7 +94,7 @@ The full command surface and every flag are in [docs/commands.md](docs/commands.
 - **Identical on every platform.** Where the operating systems differ, the difference is absorbed
   inside DevNest; Windows is the primary development platform, not a port done afterwards.
 - **Every command speaks JSON.** `--output json` on anything. The table view is a rendering of the
-  same data — the JSON never contains less.
+  same data, and the JSON never contains less.
 - **Nothing leaves your machine unasked.** Only `devnest network` opens a socket, and only to the
   address you named. No telemetry, no analytics, no update check, not even opt-in.
 - **Safe by default.** Nothing destructive happens without an explicit flag. `devnest clean`
@@ -113,5 +113,5 @@ The full command surface and every flag are in [docs/commands.md](docs/commands.
 
 ## License
 
-[MIT](LICENSE). Use it, change it, redistribute it, sell it, put it in a paid product — keep the
+[MIT](LICENSE). Use it, change it, redistribute it, sell it, put it in a paid product. Keep the
 copyright notice and there are no other conditions.

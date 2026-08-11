@@ -1,8 +1,8 @@
 # Installation
 
-Status: current as of 0.1.0. The archives, the `.deb`, the `.rpm`, the Homebrew tap, and building
+Status: current as of 1.0.0. The archives, the `.deb`, the `.rpm`, the Homebrew tap, and building
 from source all work today; winget is generated with each release but not submitted yet
-Last revised: 2026-07-25
+Last revised: 2026-08-12
 
 DevNest is a single executable with no runtime dependency. Every method below results in the same
 binary; pick whichever fits how you manage tools.
