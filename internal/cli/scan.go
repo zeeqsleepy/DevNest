@@ -66,6 +66,7 @@ func newScanCommand() *Command {
 			newScanTypesCommand(),
 			newScanLinesCommand(),
 			newScanTreeCommand(),
+			newScanCompareCommand(),
 		},
 	}
 }

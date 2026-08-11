@@ -86,6 +86,9 @@ var surfaceCases = []struct {
 	{"git stale", []string{"git", "stale", "{repo}", "--days", "0"}},
 	{"git contributors", []string{"git", "contributors", "{repo}"}},
 	{"git large", []string{"git", "large", "{repo}"}},
+	{"git hotspot", []string{"git", "hotspot", "{repo}"}},
+
+	{"init list", []string{"init", "--list"}},
 
 	{"log analyze", []string{"log", "analyze", "{log}"}},
 	{"log http", []string{"log", "http", "{log}"}},
@@ -101,6 +104,7 @@ var surfaceCases = []struct {
 	{"scan types", []string{"scan", "types", "{tree}"}},
 	{"scan lines", []string{"scan", "lines", "{tree}"}},
 	{"scan tree", []string{"scan", "tree", "{tree}"}},
+	{"scan compare", []string{"scan", "compare", "{snapshot}"}},
 
 	{"secret scan", []string{"secret", "scan", "{tree}"}},
 	{"secret rules", []string{"secret", "rules"}},
@@ -318,12 +322,27 @@ func surfaceFixture(t *testing.T) map[string]string {
 		"{repo}":       surfaceRepository(t, root),
 		"{digest}":     sum,
 		"{credential}": credential,
+		// A saved scan of the fixture tree, so "scan compare" has a baseline.
+		"{snapshot}": surfaceSnapshot(t, tree),
 		// The JWT from RFC 7519's example, which carries no signature anyone
 		// can use and decodes to a header and three claims.
 		"{jwt}": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9." +
 			"eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ." +
 			"SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c",
 	}
+}
+
+// surfaceSnapshot saves a scan of the fixture tree, the baseline "scan compare"
+// reads back.
+func surfaceSnapshot(t *testing.T, tree string) string {
+	t.Helper()
+
+	scanned := runBinary(t, "scan", tree, "--output", "json")
+	path := filepath.Join(filepath.Dir(tree), "snapshot.json")
+	if err := os.WriteFile(path, []byte(scanned.stdout), 0o600); err != nil {
+		t.Fatalf("write snapshot: %v", err)
+	}
+	return path
 }
 
 // surfaceRepository builds a repository with two commits on two branches. This

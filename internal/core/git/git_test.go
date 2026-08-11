@@ -105,6 +105,8 @@ func subcommandOf(args []string) (string, bool) {
 func logKey(args []string) string {
 	joined := strings.Join(args, " ")
 	switch {
+	case strings.Contains(joined, "--name-only"):
+		return "log hotspot"
 	case strings.Contains(joined, "--max-parents=0"):
 		return "log first"
 	case strings.Contains(joined, "-1"):
@@ -242,6 +244,7 @@ func TestNothingRunsAWritingSubcommand(t *testing.T) {
 	_, _ = Branches(ctx, system, system, BranchRequest{Now: reference})
 	_, _ = Stale(ctx, system, system, BranchRequest{Now: reference}, true)
 	_, _ = Contributors(ctx, system, system, ContributorRequest{Now: reference})
+	_, _ = Hotspot(ctx, system, system, HotspotRequest{})
 	_, _ = Large(ctx, system, system, LargeRequest{})
 
 	// Subcommands that always write. `remote` and `tag` are absent because

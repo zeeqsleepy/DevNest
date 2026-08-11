@@ -347,29 +347,35 @@ registry rather than from connecting to the service. It deliberately stops short
 detection, banner grabbing, and every SYN-scan technique, which remain out of scope; the reasoning
 is in `modules.md`.
 
+**Shipped for 1.0**, the after-1.0 directions below that were pulled into the release because they
+round out what a 1.0 should offer:
+
+- **`git hotspot`**, files by change frequency as a proxy for where the risk concentrates. Moved
+  up because it is a small table-able operation on a module that already reads the log.
+- **`scan compare`**, diffing two scans to show growth over time, for a repository that keeps
+  getting bigger and nobody knows why. Moved up because the scan saves already exist and the
+  comparison is a read of those plus one fresh scan.
+- **More toolchains in `env`**, each a table entry, after the release process doc carried them as
+  the most contribution-friendly work available.
+- **Project-local configuration**, a `.devnest.toml` limited to non-safety inspection and
+  presentation keys. **`clean` is never among them**, and that is settled rather than pending: a
+  file that travels with a clone must never widen what a delete command will remove.
+- **Scaffolding**, `devnest init` with templates embedded in the binary. Moved up because a small,
+  curated set of committed templates (currently `blank` and `go-cli`) round out a 1.0, and keeping
+  it to embedded, hand-written templates avoids the mediocre-generator failure the roadmap warned
+  about: the templates are the ecosystem, and the command is a copy.
+
+One direction remains after 1.0:
+
 ## After 1.0
 
 Not commitments. Directions, in rough order of how likely they are to be worth doing.
 
-**Scaffolding.** `devnest init` with templates from `templates/`. Deferred past 1.0 because doing
-it well means a template ecosystem, and doing it badly means another mediocre generator.
-
-**Project-local configuration.** Currently excluded on purpose; see `configuration.md`. If real
-usage shows a narrow set of keys that genuinely belong per-project, a `.devnest.toml` limited to
-those keys (never the safety-relevant ones) becomes reasonable. **`clean` is not among them**, and
-that is settled rather than pending: a file that travels with a clone must never widen what a
-delete command will remove. The reasoning is in `modules.md`.
-
-**Scan comparison.** Diff two scans to show growth over time. Useful for tracking a repository
-that keeps getting bigger and nobody knows why.
-
-**Git hotspot analysis.** Files by change frequency, as a proxy for where the risk concentrates.
-
-**More toolchains in `env`.** A table entry each, so this is contribution-friendly and does not
-need a maintainer.
-
 **A `pkg/` surface.** If demand appears for using a module as a library. The domain layer is
-already shaped for it; what is missing is the API stability commitment, not the code.
+already shaped for it; what is missing is the API stability commitment, not the code. It was
+deliberately **not** part of 1.0: exposing a package from `internal/` into `pkg/` would freeze that
+API under the 1.0 compatibility promise before any downstream consumer existed, and freezing an
+API nobody uses is how a promise starts to mean nothing.
 
 ## Explicitly not planned
 

@@ -23,6 +23,7 @@ func NewRoot() *Command {
 			newFileCommand(),
 			newGitCommand(),
 			newHelpCommand(),
+			newInitCommand(),
 			newJSONCommand(),
 			newLogCommand(),
 			newNetworkCommand(),

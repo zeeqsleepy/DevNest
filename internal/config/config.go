@@ -155,6 +155,11 @@ type Source struct {
 	// Explicit is true when the user named the file with --config. A named
 	// file that does not exist is a fatal error; the default one is not.
 	Explicit bool
+	// ProjectDir is where discovery of a project-local .devnest.toml starts.
+	// An empty value disables project configuration entirely, which the
+	// configuration-management commands use: they edit the one file, and a
+	// project file read into that edit would fight the caller.
+	ProjectDir string
 	// LookupEnv reads environment variables. Nil means os.LookupEnv.
 	LookupEnv func(string) (string, bool)
 }
@@ -195,6 +200,17 @@ func LoadDetailed(source Source) (Config, []Warning, map[string]string, error) {
 	}
 	if err != nil {
 		return config, warnings, origins, err
+	}
+
+	if source.ProjectDir != "" {
+		fromProject, projectWarnings, err := applyProject(&config, source.ProjectDir)
+		for _, key := range fromProject {
+			origins[key] = OriginProject
+		}
+		warnings = append(warnings, projectWarnings...)
+		if err != nil {
+			return config, warnings, origins, err
+		}
 	}
 
 	lookup := source.LookupEnv

@@ -94,10 +94,13 @@ func unknownCommand(command *Command, positional []string) error {
 // it. The order matters: verbosity comes from configuration, so a logger built
 // any earlier would log at the wrong level.
 func newEnv(command *Command, started time.Time, globals *globalFlags, opts Options) (*Env, error) {
+	cwd, _ := os.Getwd()
+
 	resolved, warnings, err := config.Load(config.Source{
-		Path:      globals.configPath,
-		Explicit:  globals.configPath != "",
-		LookupEnv: opts.LookupEnv,
+		Path:       globals.configPath,
+		Explicit:   globals.configPath != "",
+		ProjectDir: cwd,
+		LookupEnv:  opts.LookupEnv,
 	})
 	if err != nil {
 		if !command.RunsWithoutConfig {

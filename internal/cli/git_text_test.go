@@ -155,6 +155,30 @@ func TestGitLargeTextReportsWhatItExamined(t *testing.T) {
 	}
 }
 
+func TestGitHotspotTextShowsCountsAndTruncation(t *testing.T) {
+	result := git.HotspotResult{
+		Files: []git.HotspotFile{
+			{Path: "internal/core/git/git.go", Commits: 42},
+		},
+		DistinctFiles: 5, Commits: 100, Truncated: true,
+	}
+
+	got := render(t, gitHotspotText(result))
+	for _, want := range []string{"internal/core/git/git.go", "42", "5", "100", "--limit 0"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("output = %q, want it to contain %q", got, want)
+		}
+	}
+}
+
+func TestGitHotspotTextSaysWhenNothingChanged(t *testing.T) {
+	got := render(t, gitHotspotText(git.HotspotResult{}))
+
+	if !strings.Contains(got, "No changed files") {
+		t.Errorf("output = %q, want a sentence rather than an empty table", got)
+	}
+}
+
 func TestGitPathDefaultsToHere(t *testing.T) {
 	path, err := gitPath(nil)
 	if err != nil || path != "." {

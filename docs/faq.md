@@ -111,12 +111,13 @@ obligation. Extension happens two ways: contribute a module upstream, or consume
 from your own tool. If it is ever reconsidered, the mechanism will be a subprocess exchanging JSON
 over stdio, not code loaded into DevNest.
 
-**Why no project-local config file?**
+**What can go in a project-local config file?**
 
-A config file discovered by walking up from the working directory means the same command behaves
-differently in different directories. Confusing when it works, dangerous when the command deletes
-things. Project-specific behaviour goes in flags, which are visible at the call site. This may be
-revisited for a narrow set of non-safety keys if usage demands it; see `roadmap.md`.
+A project can carry a `.devnest.toml` at its root, discovered by walking up from the working
+directory. Its scope is deliberately narrow: presentation and inspection keys only. **Safety-relevant
+keys are never allowed** — nothing in `[clean]` or `[secret]`, and not `general.confirm` — because a
+file that travels with a clone must never widen what a delete command will remove or turn off a
+confirmation. See `configuration.md` for the full list and the precedence order.
 
 **Why does `devnest git` shell out instead of using a git library?**
 

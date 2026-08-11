@@ -450,8 +450,8 @@ env check` reporting drift and exiting non-zero, useful as a CI gate.
 
 ### `core/scan`: project analysis *(implemented)*
 
-**Owns.** Four operations over a directory tree: a structural summary, a file-type breakdown, a
-line count, and a tree listing.
+**Owns.** Five operations over a directory tree: a structural summary, a file-type breakdown, a
+line count, a tree listing, and a comparison of two scans.
 
 **Dependencies.** One: a read-only `Inspector` (resolve, stat, walk, open). The scanner cannot move
 a file or open a socket, and the interface is what enforces that.
@@ -464,6 +464,7 @@ a file or open a socket, and the interface is what enforces that.
 | `Types` | Counts and sizes by extension, or by folded language |
 | `Lines` | Code, comment, and blank lines, grouped by language |
 | `Tree` | The directory shape, with totals for every branch |
+| `Compare` | Deltas (files, size, derived categories, languages) between a saved scan and now |
 
 **Ignoring what the project ignores.** A scan that counts `node_modules` answers a question nobody
 asked: four hundred thousand files, of which four hundred are the project. So the walk skips the
@@ -494,10 +495,15 @@ the same answers and modules may not import each other.
 **Size reporting lives elsewhere.** "Where did the disk space go" is `devnest file size`, and this
 module does not duplicate it. It reports shape, not weight.
 
+**`Compare` is aggregates, not renames.** The "before" is a snapshot saved by the user (with
+`--export` or `--output json`); the "after" is a fresh scan with the same settings. It reports how
+many more files, how much larger, and which categories grew, and it does not try to follow renamed
+paths — the question it answers is "is this project getting bigger and where", not "which file
+moved". Deltas are after minus before, so growth is positive. Load reads either the result envelope
+this module's commands write or a bare `SummaryResult`.
+
 **Depends on.** `platform/fs` and `internal/classify`. Deliberately no git dependency: `scan` works
 on any directory, including one that is not a repository.
-
-**Later.** Comparison of two scans to show growth over time.
 
 ---
 
@@ -715,7 +721,8 @@ tool.
 ### `core/git`: repository inspection *(implemented)*
 
 **Owns.** Repository summary (branch, remotes, working-tree status, commit count, age), stale
-branch detection, contributor statistics, and a report of the largest objects in history.
+branch detection, contributor statistics, a report of the largest objects in history, and a
+hotspot report of the files the history changes most often.
 
 **Parsing git.** Every invocation asks for a machine format rather than the human one:
 `for-each-ref` and `log` with an explicit `--format`, `status --porcelain`, `cat-file
@@ -733,6 +740,12 @@ every commit object already.
 longest timeout. Objects unreachable from any ref are left out: they are usually waiting to be
 garbage collected, and a row nobody can act on is noise.
 
+**`hotspot` is change frequency as a proxy for risk.** A file that half of every change edits, or
+one that never stops being rewritten, is where a regression is most likely to land, whatever the
+file actually does. It is one pass over the log with `--name-only`, counting how many commits each
+path appears in, and it reports the count rather than opining on it. `--since` narrows the window,
+so the answer can be "what is changing now" rather than "what has always changed".
+
 **Implementation choice.** Shells out to the `git` executable rather than embedding a git library.
 The reasoning: any machine that has a repository to inspect has git installed, the CLI is a
 stable and well-documented interface, and a git implementation is an enormous surface to carry
@@ -744,9 +757,6 @@ user decides. `devnest git stale` prints branches and, on request, the deletion 
 It does not run them.
 
 **Depends on.** `platform/proc` for invoking git, `platform/fs` for repository discovery.
-
-**Later.** Hotspot analysis: files with the highest change frequency, a useful proxy for where
-the risk lives.
 
 ---
 
@@ -854,6 +864,28 @@ view of it.
 - **A file that is not there is not an error here.** For every other command a `--config` path that
   does not exist is fatal; for these it is the ordinary state of a machine nobody has configured
   yet, and it is reported rather than refused.
+
+---
+
+### `core/scaffold`: project scaffolding
+
+**Owns.** Building a new project from a committed template: listing the templates and copying one
+into a target directory.
+
+**Templates are embedded.** They live under `templates/` in this package and are compiled into the
+binary with `go:embed`, so a release download scaffolds exactly what a source build does. A `.tpl`
+suffix is dropped on copy, which is how a template carries a `go.mod` without making the
+scaffolding package look like a nested module to the Go toolchain (an embed of a tree cannot cross
+a module boundary).
+
+**A scaffold never overwrites.** The target directory is created, and one that already contains
+files is refused, with no `--force`. A template is the start of a project, and a scaffold with a
+flag to clobber is a scaffold that will be used that way once. The safe action is a fresh, empty
+directory, and the error says so.
+
+**Depends on.** `io/fs`, `embed`, and the standard library's own file operations. There is no
+`platform/fs` dependency because a scaffold copies a small committed tree into a brand-new
+directory, where the platform-specific guards that package exists to enforce do not yet apply.
 
 ---
 

@@ -66,6 +66,7 @@ func newGitCommand() *Command {
 			newGitStaleCommand(),
 			newGitContributorsCommand(),
 			newGitLargeCommand(),
+			newGitHotspotCommand(),
 		},
 	}
 }
@@ -619,4 +620,106 @@ func short(hash string) string {
 		return hash[:width]
 	}
 	return hash
+}
+
+func newGitHotspotCommand() *Command {
+	var (
+		limit int
+		since string
+	)
+
+	return &Command{
+		Name:    "hotspot",
+		Summary: "The files a repository changes most often",
+		Usage:   "devnest git hotspot [path] [flags]",
+		Description: "Report which files the history touches most, newest activity first.\n\n" +
+			"Change frequency is a proxy for where the risk concentrates: a file that half of " +
+			"every change edits, or one that never stops being rewritten, is where a regression " +
+			"is most likely to land. This reports the count, which is the question — it does not " +
+			"opine on whether the churn is good or bad.\n\n" +
+			"--since narrows the window to recent work, in any form git accepts: a date, or " +
+			"something like \"3 months ago\", so the answer is \"what is changing now\" rather " +
+			"than \"what has always changed\". Results are rows, so --output csv works.",
+		Examples: []Example{
+			{
+				Command:     "devnest git hotspot --limit 10",
+				Description: "The ten most-changed files in the whole history.",
+			},
+			{
+				Command:     "devnest git hotspot --since '6 months ago'",
+				Description: "Where the change is concentrating this year.",
+			},
+		},
+		SetFlags: func(set *flag.FlagSet) {
+			set.IntVar(&limit, "limit", 0, "how many files to report (default all)")
+			set.StringVar(&since, "since", "", "only commits after this date")
+		},
+		Run: func(ctx context.Context, env *Env, args []string) error {
+			path, err := gitPath(args)
+			if err != nil {
+				return err
+			}
+
+			runner, locator := gitSystem()
+			result, err := git.Hotspot(ctx, runner, locator, git.HotspotRequest{
+				Path:  path,
+				Limit: limit,
+				Since: since,
+			})
+			if err != nil {
+				return err
+			}
+
+			return env.EmitTable(result, gitHotspotText(result), gitHotspotTable(result))
+		},
+	}
+}
+
+func gitHotspotText(result git.HotspotResult) output.TextFunc {
+	return func(w io.Writer) error {
+		if result.DistinctFiles == 0 {
+			_, err := fmt.Fprintln(w, "No changed files in that window.")
+			return err
+		}
+
+		columns := []output.Column{
+			{Title: "path"},
+			{Title: "commits", Right: true},
+		}
+
+		rows := make([][]string, 0, len(result.Files))
+		for _, file := range result.Files {
+			rows = append(rows, []string{file.Path, output.Count(file.Commits)})
+		}
+
+		if err := output.WriteTable(w, columns, rows); err != nil {
+			return err
+		}
+
+		fmt.Fprintf(w, "\n%s file(s) changed in %s commit(s), showing %s\n",
+			output.Count(result.DistinctFiles),
+			output.Count(result.Commits),
+			output.Count(len(result.Files)))
+		if result.Truncated {
+			_, err := fmt.Fprintln(w, "This is the top of the list; pass --limit 0 for all of it.")
+			return err
+		}
+		return nil
+	}
+}
+
+func gitHotspotTable(result git.HotspotResult) output.TableFunc {
+	return func() output.Table {
+		rows := make([][]string, 0, len(result.Files))
+		for _, file := range result.Files {
+			rows = append(rows, []string{file.Path, strconv.Itoa(file.Commits)})
+		}
+		return output.Table{
+			Columns: []output.Column{
+				{Title: "path"},
+				{Title: "commits", Right: true},
+			},
+			Rows: rows,
+		}
+	}
 }

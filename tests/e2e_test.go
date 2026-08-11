@@ -73,6 +73,34 @@ func runBinary(t *testing.T, args ...string) result {
 	return result{stdout: stdout.String(), stderr: stderr.String(), exitCode: code}
 }
 
+// runBinaryDir is runBinary running the binary with its working directory set,
+// which a test needs when it exercises discovery of a project-local file.
+func runBinaryDir(t *testing.T, dir string, args ...string) result {
+	t.Helper()
+
+	config := filepath.Join(t.TempDir(), "config.toml")
+	if err := os.WriteFile(config, nil, 0o600); err != nil {
+		t.Fatalf("write empty configuration: %v", err)
+	}
+
+	command := exec.Command(binaryPath(t), append(args, "--config", config)...)
+	command.Dir = dir
+	var stdout, stderr bytes.Buffer
+	command.Stdout = &stdout
+	command.Stderr = &stderr
+
+	code := 0
+	if err := command.Run(); err != nil {
+		var exitErr *exec.ExitError
+		if !errors.As(err, &exitErr) {
+			t.Fatalf("run %s: %v", command.Path, err)
+		}
+		code = exitErr.ExitCode()
+	}
+
+	return result{stdout: stdout.String(), stderr: stderr.String(), exitCode: code}
+}
+
 func TestVersionExitsZero(t *testing.T) {
 	got := runBinary(t, "version")
 
@@ -84,6 +112,49 @@ func TestVersionExitsZero(t *testing.T) {
 	}
 	if got.stderr != "" {
 		t.Errorf("stderr = %q, want it empty on success", got.stderr)
+	}
+}
+
+func TestInitScaffoldsAProject(t *testing.T) {
+	target := filepath.Join(t.TempDir(), "proj")
+
+	got := runBinary(t, "init", target, "--template", "go-cli")
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	for _, file := range []string{"go.mod", "main.go", "README.md"} {
+		if _, err := os.Stat(filepath.Join(target, file)); err != nil {
+			t.Errorf("%s was not scaffolded: %v", file, err)
+		}
+	}
+	// The go.mod arrives under its real name, never as .tpl.
+	if _, err := os.Stat(filepath.Join(target, "go.mod.tpl")); !os.IsNotExist(err) {
+		t.Error("the template suffix leaked into the scaffolded project")
+	}
+}
+
+func TestInitListShowsTheTemplates(t *testing.T) {
+	got := runBinary(t, "init", "--list")
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	for _, want := range []string{"blank", "go-cli"} {
+		if !strings.Contains(got.stdout, want) {
+			t.Errorf("init --list does not mention %q:\n%s", want, got.stdout)
+		}
+	}
+}
+
+// A scaffold that would overwrite existing work is refused, so nothing is lost.
+func TestInitRefusesToOverwrite(t *testing.T) {
+	target := t.TempDir()
+	if err := os.WriteFile(filepath.Join(target, "keep.txt"), []byte("x"), 0o600); err != nil {
+		t.Fatalf("write existing file: %v", err)
+	}
+
+	got := runBinary(t, "init", target)
+	if got.exitCode == 0 {
+		t.Error("init overwrote a directory that already had files")
 	}
 }
 
@@ -647,6 +718,60 @@ func TestScanSubcommandsRun(t *testing.T) {
 	}
 }
 
+// compare against a snapshot of the same tree reports zero growth, because the
+// two scans describe the same files the same way.
+func TestScanCompareAgainstItsOwnSnapshotReportsNoGrowth(t *testing.T) {
+	root := moduleRoot(t)
+
+	snapshot := filepath.Join(t.TempDir(), "baseline.json")
+	scanned := runBinary(t, "scan", root, "--output", "json")
+	if scanned.exitCode != 0 {
+		t.Fatalf("scan exited %d\nstderr: %s", scanned.exitCode, scanned.stderr)
+	}
+	if err := os.WriteFile(snapshot, []byte(scanned.stdout), 0o600); err != nil {
+		t.Fatalf("write snapshot: %v", err)
+	}
+
+	got := runBinary(t, "scan", "compare", snapshot, root)
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	for _, want := range []string{"->", "0"} {
+		if !strings.Contains(got.stdout, want) {
+			t.Errorf("stdout does not mention %q:\n%s", want, got.stdout)
+		}
+	}
+}
+
+func TestScanCompareReadsProblemsAndReportsAShrink(t *testing.T) {
+	root := t.TempDir()
+	code := filepath.Join(root, "code.txt")
+	if err := os.WriteFile(code, []byte("one\n"), 0o600); err != nil {
+		t.Fatalf("write file: %v", err)
+	}
+
+	snapshot := filepath.Join(root, "baseline.json")
+	scanned := runBinary(t, "scan", root, "--output", "json")
+	if scanned.exitCode != 0 {
+		t.Fatalf("scan exited %d\nstderr: %s", scanned.exitCode, scanned.stderr)
+	}
+	if err := os.WriteFile(snapshot, []byte(scanned.stdout), 0o600); err != nil {
+		t.Fatalf("write snapshot: %v", err)
+	}
+
+	// Grow the tree, then compare: the delta should show the gain.
+	if err := os.WriteFile(filepath.Join(root, "more.txt"), []byte("extra\n"), 0o600); err != nil {
+		t.Fatalf("write second file: %v", err)
+	}
+	got := runBinary(t, "scan", "compare", snapshot, root)
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	if !strings.Contains(got.stdout, "+1") {
+		t.Errorf("stdout does not show a file gained:\n%s", got.stdout)
+	}
+}
+
 func TestScanRefusesAFile(t *testing.T) {
 	got := runBinary(t, "scan", filepath.Join(moduleRoot(t), "go.mod"))
 
@@ -661,7 +786,7 @@ func TestScanRefusesAFile(t *testing.T) {
 func TestEnvAndScanGroupHelp(t *testing.T) {
 	tests := map[string][]string{
 		"env":  {"list", "path", "which", "vars"},
-		"scan": {"types", "lines", "tree"},
+		"scan": {"types", "lines", "tree", "compare"},
 	}
 
 	for group, commands := range tests {
@@ -1101,6 +1226,7 @@ func TestGitSubcommandsRun(t *testing.T) {
 		"stale":        {"git", "stale", root, "--days", "3650"},
 		"contributors": {"git", "contributors", root, "--limit", "5"},
 		"large":        {"git", "large", root, "--limit", "3"},
+		"hotspot":      {"git", "hotspot", root, "--limit", "3"},
 	}
 
 	for name, args := range cases {
@@ -1127,6 +1253,7 @@ func TestGitChangesNothing(t *testing.T) {
 		{"git", "branches", root},
 		{"git", "stale", root, "--print-commands"},
 		{"git", "contributors", root},
+		{"git", "hotspot", root},
 	} {
 		if got := runBinary(t, args...); got.exitCode != 0 {
 			t.Fatalf("%v exited %d\nstderr: %s", args, got.exitCode, got.stderr)
@@ -1633,6 +1760,27 @@ func TestConfigRoundTrip(t *testing.T) {
 	}
 	if got := run("config", "validate"); got.exitCode != 0 {
 		t.Errorf("config validate exited %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+}
+
+// A .devnest.toml at the working directory changes inspection settings, but
+// never the safety-relevant ones.
+func TestProjectConfigAppliesFromTheWorkingDirectory(t *testing.T) {
+	project := t.TempDir()
+	if err := os.WriteFile(filepath.Join(project, ".devnest.toml"),
+		[]byte("[general]\noutput = \"json\"\n[clean]\npatterns = [\"vendor_artifacts\"]\n"), 0o600); err != nil {
+		t.Fatalf("write project config: %v", err)
+	}
+
+	// A JSON output chosen by the project file, running a scan from inside the
+	// project and naming no output format, must come out JSON.
+	got := runBinaryDir(t, project, "scan", project)
+	if got.exitCode != 0 {
+		t.Fatalf("exit code = %d\nstderr: %s", got.exitCode, got.stderr)
+	}
+	var decoded map[string]any
+	if err := json.Unmarshal([]byte(got.stdout), &decoded); err != nil {
+		t.Errorf("stdout is not JSON, so the project file was not applied:\n%s", got.stdout)
 	}
 }
 

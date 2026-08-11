@@ -51,12 +51,35 @@ and most users never create one.
 
 `devnest config path` prints the file in use. `devnest config init` writes the annotated default.
 
-**There is no project-local configuration file.** This is deliberate. A config file discovered by
-walking up from the working directory means the same command behaves differently in different
-directories, which is confusing when it works and dangerous when the command deletes things.
-Project-specific behaviour is expressed with flags, which are visible at the call site. This may be
-revisited for a narrow set of keys if real usage demands it, never including the `[clean]` keys; a
-file that arrives with a clone must not widen what a delete command will remove. See `roadmap.md`.
+## Project-local configuration
+
+A project can carry its own settings in a `.devnest.toml` at the root of its tree. Running
+DevNest from anywhere inside the project discovers it by walking up from the working directory, so
+`scan` respects the exclusions the project cares about without every contributor passing the same
+flags.
+
+**Only a narrow set of keys is allowed, and the safety-relevant ones are not among them.** A file
+that travels with a clone must never widen what a delete command will remove, must never turn off a
+confirmation, and must never hide paths from a secret scan — those are decisions for the machine a
+command actually runs on, not for code that arrives with a repository.
+
+Allowed keys:
+- `[general]`: `output`, `color`, `verbosity`.
+- `[scan]`: `follow_symlinks`, `respect_ignore`, `max_depth`, `exclude`.
+- `[network]`: `timeout_ms`, `follow_redirect`, `max_redirects`, `attempts`, `interval_ms`.
+- `[security]`: the three password-shape defaults.
+
+Never allowed, and ignored with a warning when present: everything in `[clean]`, everything in
+`[secret]`, and `general.confirm`. A key DevNest does not recognise at all is warned about exactly
+as in the main file.
+
+**Precedence.** The project file sits between the machine's file and the environment: default <
+machine file < project file < environment < flag. The project file beats the machine's file
+because it is nearer the call site; the environment and an explicit flag still win, because they
+are a deliberate override for one run.
+
+`devnest config <command>` ignores the project file: those commands edit the one file, and a
+project file read into that edit would fight the caller.
 
 ## Format
 

@@ -192,3 +192,74 @@ func TestScanTablesAreMachineReadable(t *testing.T) {
 		t.Errorf("code = %q, want an unformatted number", lines.Rows[0][2])
 	}
 }
+
+func TestScanCompareTextShowsGrowthWithSigns(t *testing.T) {
+	result := scan.CompareResult{
+		Root: "/work/api",
+		FilesBefore: 100, FilesAfter: 150, FilesDelta: 50,
+		BytesBefore: 1000, BytesAfter: 2000, BytesDelta: 1000,
+		Categories: []scan.CountDelta{
+			{Name: "source", FilesBefore: 50, FilesAfter: 80, FilesDelta: 30,
+				BytesBefore: 500, BytesAfter: 800, BytesDelta: 300},
+		},
+		DurationMs: 5,
+	}
+
+	got := render(t, scanCompareText(result))
+	for _, want := range []string{"/work/api", "100 -> 150", "+50", "+1000 B", "By category", "source"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("output = %q, want it to contain %q", got, want)
+		}
+	}
+}
+
+func TestScanCompareTextShowsAShrinkAndAHeadingForChangedLanguages(t *testing.T) {
+	result := scan.CompareResult{
+		FilesBefore: 10, FilesAfter: 7, FilesDelta: -3,
+		Languages: []scan.CountDelta{
+			{Name: "TypeScript", FilesBefore: 5, FilesAfter: 0, FilesDelta: -5},
+		},
+	}
+
+	got := render(t, scanCompareText(result))
+	if !strings.Contains(got, "-3") {
+		t.Errorf("output = %q, want a shrink shown as negative", got)
+	}
+	if !strings.Contains(got, "Languages that changed") {
+		t.Errorf("output = %q, want the changed-languages heading", got)
+	}
+}
+
+func TestScanCompareTableCarriesUnformattedNumbers(t *testing.T) {
+	result := scan.CompareResult{
+		Categories: []scan.CountDelta{
+			{Name: "source", FilesBefore: 50, FilesAfter: 80, FilesDelta: 30,
+				BytesBefore: 500, BytesAfter: 800, BytesDelta: 300},
+		},
+	}
+
+	table := scanCompareTable(result)()
+	if table.Rows[0][2] != "50" {
+		t.Errorf("files_before = %q, want an unformatted number", table.Rows[0][2])
+	}
+	if table.Rows[0][6] != "800" {
+		t.Errorf("bytes_before = %q, want an unformatted number", table.Rows[0][6])
+	}
+}
+
+func TestScanCompareTargetsSplitsSnapshotFromTree(t *testing.T) {
+	snapshot, tree, err := scanCompareTargets([]string{"baseline.json"})
+	if err != nil || snapshot != "baseline.json" || tree != "." {
+		t.Errorf("one arg = %q, %q, %v, want the snapshot and the current directory", snapshot, tree, err)
+	}
+
+	snapshot, tree, err = scanCompareTargets([]string{"baseline.json", "src"})
+	if err != nil || snapshot != "baseline.json" || tree != "src" {
+		t.Errorf("two args = %q, %q, %v, want snapshot and tree", snapshot, tree, err)
+	}
+
+	if _, _, err := scanCompareTargets(nil); err == nil {
+		t.Error("no snapshot was accepted")
+	}
+}
+

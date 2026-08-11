@@ -77,10 +77,14 @@ devnest clean rules                    everything clean would ever consider remo
 devnest git                            branch, remotes, counts, how idle the history is
 devnest git stale --print-commands     quiet branches, with the commands to remove them
 devnest git large                      what is making the repository slow to clone
+devnest git hotspot                    the files a repository changes most often
 devnest secret scan --fail-on high     credentials in the tree, as a CI gate
 devnest secret scan --baseline b.json  accept what an old repository already has, gate on new
 devnest secret history --all           credentials committed at any point, still leaked
 devnest secret rules                   every detector, its severity, its entropy floor
+
+devnest scan compare baseline.json     how the project grew since an earlier scan
+devnest init --template go-cli api     scaffold a new project from a committed template
 ```
 
 Nothing in the file group deletes a file, and nothing that changes the disk does so without

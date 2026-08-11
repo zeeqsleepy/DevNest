@@ -13,6 +13,7 @@ import (
 const (
 	OriginDefault     = "default"
 	OriginFile        = "file"
+	OriginProject     = "project"
 	OriginEnvironment = "environment"
 	OriginFlag        = "flag"
 )

@@ -495,6 +495,26 @@ error: null
 status: string
 warnings: array
 
+## git hotspot
+$: object
+data.commits: number
+data.distinctFiles: number
+data.files: array
+data.files[].commits: number
+data.files[].path: string
+data.files[]: object
+data.root: string
+data.truncated: boolean
+data: object
+devnest.command: string
+devnest.durationMs: number
+devnest.startedAt: string
+devnest.version: string
+devnest: object
+error: null
+status: string
+warnings: array
+
 ## git large
 $: object
 data.count: number
@@ -533,6 +553,19 @@ data.root: string
 data.staleCount: number
 data.staleDays: number
 data: object
+devnest.command: string
+devnest.durationMs: number
+devnest.startedAt: string
+devnest.version: string
+devnest: object
+error: null
+status: string
+warnings: array
+
+## init list
+$: object
+data: array
+data[]: string
 devnest.command: string
 devnest.durationMs: number
 devnest.startedAt: string
@@ -791,6 +824,54 @@ data.languages[].bytes: number
 data.languages[].files: number
 data.languages[].name: string
 data.languages[].percent: number
+data.languages[]: object
+data.problems: array
+data.root: string
+data: object
+devnest.command: string
+devnest.durationMs: number
+devnest.startedAt: string
+devnest.version: string
+devnest: object
+error: null
+status: string
+warnings: array
+
+## scan compare
+$: object
+data.authoredBytesAfter: number
+data.authoredBytesBefore: number
+data.authoredBytesDelta: number
+data.authoredFilesAfter: number
+data.authoredFilesBefore: number
+data.authoredFilesDelta: number
+data.bytesAfter: number
+data.bytesBefore: number
+data.bytesDelta: number
+data.categories: array
+data.categories[].bytesAfter: number
+data.categories[].bytesBefore: number
+data.categories[].bytesDelta: number
+data.categories[].filesAfter: number
+data.categories[].filesBefore: number
+data.categories[].filesDelta: number
+data.categories[].name: string
+data.categories[]: object
+data.directoriesAfter: number
+data.directoriesBefore: number
+data.directoriesDelta: number
+data.durationMs: number
+data.filesAfter: number
+data.filesBefore: number
+data.filesDelta: number
+data.languages: array
+data.languages[].bytesAfter: number
+data.languages[].bytesBefore: number
+data.languages[].bytesDelta: number
+data.languages[].filesAfter: number
+data.languages[].filesBefore: number
+data.languages[].filesDelta: number
+data.languages[].name: string
 data.languages[]: object
 data.problems: array
 data.root: string

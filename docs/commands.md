@@ -1,9 +1,7 @@
 # Commands
 
-Status: every group below is implemented apart from the reserved names at the end. `init` and the
-scaffolding templates are the one deferred item, and are described in `roadmap.md` under what
-comes after 1.0.
-Last revised: 2026-07-24
+Status: every group below is implemented apart from the reserved names at the end.
+Last revised: 2026-08-12
 
 The full intended command surface. This is the plan, not a manual; anything here can change before
 it ships, and anything that ships is frozen for the major version under `rules.md` R50.
@@ -534,6 +532,7 @@ Read-only, always. Default target is the current directory.
 | `scan types [path]` | File counts and sizes by extension or detected language |
 | `scan lines [path]` | Line counts, split into code, comment, and blank |
 | `scan tree [path]` | Directory tree, with totals for each branch |
+| `scan compare <snapshot.json> [path]` | How a project grew between two scans |
 
 The walk skips what the project ignores: `.gitignore` rules, the vendor and build directories every
 ecosystem has, and always `.git`. Without that, a small Node project reports four hundred thousand
@@ -578,6 +577,21 @@ Flags: `--depth`, `--files`, `--max-entries`.
 The directory shape, with the file count and size of everything under each branch, including the
 levels not shown. Directories only by default; `--files` includes files. A listing cut at
 `--max-entries` says so.
+
+### `scan compare`
+
+Flags: the shared walk flags.
+
+Compare a saved scan of a project with the same tree now, and report how it grew: more or fewer
+files, larger or smaller, and which categories grew. The "before" is a snapshot saved earlier:
+`devnest scan --output json > baseline.json` or `devnest scan --export baseline.json`. The
+comparison is of aggregates, not individual files, which is the question a repository nobody
+tracks really asks. Deltas are after minus before, so growth is positive.
+
+```
+devnest scan --output json > baseline.json
+devnest scan compare baseline.json
+```
 
 ---
 
@@ -735,6 +749,7 @@ Read-only. Never commits, pushes, or deletes anything.
 | `git stale [path]` | Branches with no activity for `--days` (default 90) |
 | `git contributors [path]` | Commit counts and date ranges by author |
 | `git large [path]` | Largest objects in history |
+| `git hotspot [path]` | Files the history touches most often |
 
 `git stale` can print the deletion commands with `--print-commands`. It does not run them; the
 user reviews the list and decides.
@@ -870,6 +885,25 @@ Prints to stdout for the user to redirect into their profile. Installation instr
 ## `devnest version`
 
 Prints version, commit hash, build date, Go version, and platform. `--output json` for scripts.
+
+---
+
+## `devnest init`: project scaffolding
+
+Flags: `--template <name>`, `--list`.
+
+Scaffold a new project from a committed template into a directory. The templates are embedded in
+the binary, so a release download scaffolds exactly what a source build does. `--list` shows them;
+the default is `blank`, and `go-cli` is a starter Go program.
+
+| Command | Purpose |
+|---|---|
+| `init <directory>` | Scaffold the default blank template |
+| `init <directory> --template go-cli` | Scaffold the Go CLI starter |
+| `init --list` | List the available templates |
+
+A scaffold never overwrites: the target directory is created, and one that already contains files
+is refused — a template is the start of a project, not a merge.
 
 ---
 

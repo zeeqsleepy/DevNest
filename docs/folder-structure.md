@@ -224,11 +224,17 @@ and the comparison script. Targets are stated in `performance.md`.
 
 ## `templates/`
 
-Scaffolding templates for project generation. One subdirectory per template, each with its
-manifest describing variables and prompts.
+Scaffolding templates for project generation. They live under `internal/core/scaffold/templates/`
+so they can be embedded into the binary with `go:embed` — a release download must scaffold
+exactly what a source build does, and an embed cannot cross a module boundary.
 
-Templates are data, not code. Adding one requires no Go changes, which is the point of the
-directory existing at all.
+One subdirectory per template, each a plain tree of files that `devnest init` copies. A `.tpl`
+suffix is dropped on copy, so a template can carry a `go.mod` without making the scaffolding
+package itself look like a nested module. Adding a template is adding a directory of files; the
+command that copies them does not change.
+
+The repository root's `templates/` directory is empty, kept only because the original plan
+(introduced in phase 0) put templates there.
 
 ---
 

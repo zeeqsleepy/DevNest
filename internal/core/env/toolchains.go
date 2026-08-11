@@ -46,6 +46,14 @@ func toolchains() []toolchain {
 		{name: "rustc", kind: KindLanguage, args: []string{"--version"}},
 		{name: "gcc", kind: KindLanguage, args: []string{"--version"}},
 		{name: "clang", kind: KindLanguage, args: []string{"--version"}},
+		{name: "perl", kind: KindLanguage, args: []string{"--version"}},
+		{name: "swift", kind: KindLanguage, args: []string{"--version"}},
+		{name: "kotlin", kind: KindLanguage, executable: "kotlinc", args: []string{"-version"}},
+		{name: "lua", kind: KindLanguage, args: []string{"-v"}},
+		{name: "zig", kind: KindLanguage, args: []string{"version"}},
+		{name: "elixir", kind: KindLanguage, args: []string{"--version"}},
+		{name: "ghc", kind: KindLanguage, args: []string{"--version"}},
+		{name: "scala", kind: KindLanguage, args: []string{"-version"}},
 
 		{name: "npm", kind: KindPackage, args: []string{"--version"}},
 		{name: "pnpm", kind: KindPackage, args: []string{"--version"}},
@@ -54,23 +62,33 @@ func toolchains() []toolchain {
 		{name: "cargo", kind: KindPackage, args: []string{"--version"}},
 		{name: "composer", kind: KindPackage, args: []string{"--version"}},
 		{name: "gem", kind: KindPackage, args: []string{"--version"}},
+		{name: "poetry", kind: KindPackage, args: []string{"--version"}},
+		{name: "uv", kind: KindPackage, args: []string{"--version"}},
+		{name: "conda", kind: KindPackage, args: []string{"--version"}},
+		{name: "brew", kind: KindPackage, args: []string{"--version"}},
 
 		{name: "make", kind: KindBuild, args: []string{"--version"}},
 		{name: "cmake", kind: KindBuild, args: []string{"--version"}},
 		{name: "gradle", kind: KindBuild, args: []string{"--version"}},
 		{name: "maven", kind: KindBuild, executable: "mvn", args: []string{"--version"}},
+		{name: "ninja", kind: KindBuild, args: []string{"--version"}},
+		{name: "meson", kind: KindBuild, args: []string{"--version"}},
 
 		{name: "git", kind: KindVersion, args: []string{"--version"}},
 		{name: "hg", kind: KindVersion, args: []string{"--version"}},
+		{name: "svn", kind: KindVersion, args: []string{"--version"}},
 
 		{name: "docker", kind: KindContainer, args: []string{"--version"}},
 		{name: "podman", kind: KindContainer, args: []string{"--version"}},
 		{name: "kubectl", kind: KindContainer, args: []string{"version", "--client"}},
+		{name: "helm", kind: KindContainer, args: []string{"version", "--client"}},
+		{name: "minikube", kind: KindContainer, args: []string{"version"}},
 
 		{name: "terraform", kind: KindCloud, args: []string{"--version"}},
 		{name: "aws", kind: KindCloud, args: []string{"--version"}},
 		{name: "gcloud", kind: KindCloud, args: []string{"--version"}},
 		{name: "az", kind: KindCloud, args: []string{"--version"}},
+		{name: "pulumi", kind: KindCloud, args: []string{"version"}},
 	}
 }
 
